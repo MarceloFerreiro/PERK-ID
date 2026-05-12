@@ -3,3 +3,4 @@ opencv-python
 pandas
 requests
 tqdm
+python-dotenv

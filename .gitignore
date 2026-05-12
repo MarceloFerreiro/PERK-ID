@@ -1,13 +1,13 @@
-/.claude 
-
-canonicas/
-/imagenes
-/venvPerk
-PillIdentifier/app/src/main/assets/pills
-imagenes.rar
-
-__pycache__/
 *.png
 *.swp
+.env
 
+canonicas/
 data/
+__pycache__/
+
+/imagenes
+/.claude 
+/venvPerk
+PillIdentifier/app/src/main/assets/pills
+
