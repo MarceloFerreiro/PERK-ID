@@ -1,6 +1,6 @@
 numpy
-opencv-python
 pandas
 requests
 tqdm
 python-dotenv
+scikit-image

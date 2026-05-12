@@ -1,6 +1,7 @@
 *.png
 *.swp
 .env
+.DS_Store
 
 canonicas/
 data/
