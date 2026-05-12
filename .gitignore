@@ -9,3 +9,5 @@ imagenes.rar
 __pycache__/
 *.png
 *.swp
+
+data/

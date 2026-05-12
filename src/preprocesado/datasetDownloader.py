@@ -33,8 +33,8 @@ AÑOS         = list(range(2009, 2027))   # rango de años a descargar
 MESES        = list(range(1, 13))        # 1-12
 DELAY        = 0.4                        # segundos entre peticiones API
 IMG_WORKERS  = IMG_WORKERS = os.cpu_count()                    # hilos paralelos para imágenes
-CARPETA_IMG  = Path("imagenes")           # carpeta de salida de imágenes
-CSV_SALIDA   = "pastillas_energycontrol.csv"
+CARPETA_IMG  = Path("data/imagenes")           # carpeta de salida de imágenes
+CSV_SALIDA   = "data/pastillas_energycontrol.csv"
 MAX_SUSTANCIAS = 11                       # columnas sustancia_N / valor_N / unidad_N
 
 BASE_URL = "https://api.energycontrol.org/pilltable/"
