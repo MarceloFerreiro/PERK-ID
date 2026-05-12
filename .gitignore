@@ -1,9 +1,9 @@
 /.claude 
 
-/canonicas
-/imagenes
-/venvPerk
+canonicas/
 
+/venvPerk
+PillIdentifier/app/src/main/assets/pills
 imagenes.rar
 
 __pycache__/
