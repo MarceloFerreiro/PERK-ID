@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 
-from src.images2index import compute_features
+from src.features import features
 
 
 def _resolve_image_path(raw_path: str, images_dir: Path | None) -> Path | None:
@@ -72,7 +72,7 @@ def main() -> int:
             skipped += 1
             continue
 
-        q = compute_features(img_path).astype(np.float32)
+        q = features(img_path, transformed=False).astype(np.float32)
         q_norm = q / (np.linalg.norm(q) + 1e-10)
         sims = db_norm @ q_norm
 

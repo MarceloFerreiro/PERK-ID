@@ -3,9 +3,7 @@ import numpy as np
 from skimage import color, util
 from skimage.feature import graycomatrix, graycoprops
 
-
-def _log_timed(_elapsed: float, _feature: str, _extra: str) -> None:
-    return
+from src.utils.log import _log_timed
 
 def GLCM(image: np.ndarray | None) -> np.ndarray:
     """Compute GLCM texture descriptors: energy, entropy, contrast, correlation, homogeneity."""
