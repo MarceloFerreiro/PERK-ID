@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+from time import time
 
 import numpy as np
 from tqdm import tqdm
@@ -64,9 +65,12 @@ def main() -> int:
 
     acc1 = []
     acck = []
+    secs = []
+
     skipped = 0
 
     for idx in tqdm(eval_indices, total=len(eval_indices), unit="img", desc="Evaluando"):
+        inicio  = time()
         img_path = _resolve_image_path(str(paths[idx]), args.images_dir)
         if img_path is None:
             skipped += 1
@@ -79,6 +83,7 @@ def main() -> int:
         ranked = np.argsort(-sims)
         acc1.append(1 if ranked[0] == idx else 0)
         acck.append(1 if idx in ranked[: args.topk] else 0)
+        secs.append(time() - inicio)
 
     if not acc1:
         print("[ERROR] No se pudo evaluar ninguna imagen (rutas invalidas)")
@@ -87,6 +92,7 @@ def main() -> int:
     print(f"Evaluadas: {len(acc1)}  Omitidas: {skipped}")
     print(f"Top-1 Accuracy: {np.mean(acc1):.4f}")
     print(f"Top-{args.topk} Accuracy: {np.mean(acck):.4f}")
+    print(f"Duración media inferencia: {np.mean(secs):.4f}s")
     return 0
 
 

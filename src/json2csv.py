@@ -13,11 +13,11 @@ def json_to_csv(json_path: str, csv_path: str) -> None:
     rows = []
     for image in images:
         raw_name = image.get("name", "")
-        name = raw_name.removesuffix(".jpeg")
+        name = os.path.splitext(raw_name)[0]
 
         annotations = image.get("annotations", [])
         if not annotations:
-            rows.append([name, "", "", "", ""])
+            #rows.append([name, "", "", "", ""])
             continue
 
         position = annotations[0].get("position", {})
@@ -26,6 +26,7 @@ def json_to_csv(json_path: str, csv_path: str) -> None:
         width  = position.get("width", "")
         height = position.get("height", "")
         rows.append([name, x, y, width, height])
+        
 
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)

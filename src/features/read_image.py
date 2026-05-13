@@ -29,8 +29,16 @@ def read_image(path: Path, target_size: int = 256) -> np.ndarray | None:
             channels = image.shape[2]
             if channels == 4:
                 image = image[:, :, :3]
-            elif channels == 1:
-                image = image[:, :, 0]
+            elif channels != 3:
+                # For any other channel count (1, 2, etc.), convert to RGB
+                if channels == 1:
+                    image = np.stack([image[:, :, 0]] * 3, axis=2)
+                else:
+                    # For channels > 3, take first 3; for channels == 2, replicate
+                    image = image[:, :, :3] if channels > 3 else np.concatenate([image, image[:, :, :1]], axis=2)
+        elif image.ndim == 2:
+            # Grayscale 2D image: convert to 3-channel RGB
+            image = np.stack([image] * 3, axis=2)
 
         h, w = image.shape[:2]
         if h == 0 or w == 0: return None

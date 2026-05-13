@@ -5,11 +5,13 @@ import time
 from pathlib import Path
 from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
+import argparse
 import requests
 import pandas as pd
 from tqdm import tqdm
 from dotenv import load_dotenv
+
+from src.features.read_image import read_image
 
 load_dotenv()
 
@@ -17,7 +19,7 @@ load_dotenv()
 TOKEN        = os.getenv('TOKEN') 
 AÑOS         = list(range(2009, 2027))   # rango de años a descargar
 DELAY        = 0.4                        # segundos entre peticiones API
-CARPETA_IMG  = Path("data/imagenes")           # carpeta de salida de imágenes
+CARPETA_IMG  = Path("data/imagenes_alt")           # carpeta de salida de imágenes
 CSV_SALIDA   = "data/pastillas_energycontrol.csv"
 MAX_SUSTANCIAS = 3                       # columnas sustancia_N / valor_N / unidad_N
 
@@ -86,7 +88,13 @@ def _descargar_imagen(url: str) -> str | None:
         r = requests.get(url, headers=HEADERS, timeout=15)
         if r.ok and "image" in r.headers.get("Content-Type", ""):
             destino.write_bytes(r.content)
-            return str(destino)
+            processed = read_image(destino)
+            if processed is not None:
+                # Save the processed numpy array back as image
+                from skimage import io
+                io.imsave(str(destino), processed)
+                return str(destino)
+            destino.unlink()  # Clean up if processing failed
         return None
     except Exception:
         return None

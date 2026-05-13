@@ -72,10 +72,10 @@ Entorno
                             Cada cuantas imágenes se actualiza el indice en disco
 
     
-**Evaluar**. Antes de evaluar nos tenemos que asegurar que el aumento de datos es bueno
+**Evaluar el indice**. Importante para ver como de buenas y/o eficientes son las características. Antes de evaluar nos tenemos que asegurar que el aumento de datos es bueno, o si no vamos a tener métricas cojonudas aunque las características sean malas.
 
     
-    (venv) »python -m src.features.transform --h 5 --w 8 
+    (venv) » python -m src.features.transform --h 5 --w 8 
     open tmp/transform_grid.png
 
 Tenemos que ser conscientes que la calidad de la evaluación depende de lo bueno que sea el aumento de datos.
@@ -103,6 +103,43 @@ Generar dataset de bouding box [el json se genera en este enlace](https://2d-on-
 
     (venv) » python -m src.json2csv 2D-on-2D_labeling_save\(1\).json tmp.csv
     Done — 36 row(s) written to: tmp.csv
+
+**Entrenamiento de CNN para Bounding Box regression**. Naturalmente para este paso es fundamental tener un `.csv` con anotaciones de bb, ver paso de arriba.
+
+    (venv)  » python -m src.models.train -h
+    usage: python -m src.models.train [-h] [--images-dir IMAGES_DIR] [--bbox-csv BBOX_CSV] [--batch-size BATCH_SIZE] [--epochs EPOCHS] [--lr LR] [--lambda-bbox LAMBDA_BBOX] [--output-dir OUTPUT_DIR]
+                                      [--checkpoint-interval CHECKPOINT_INTERVAL] [--latent-dim LATENT_DIM]
+    
+    Train masked autoencoder on pill images
+    
+    options:
+      -h, --help            show this help message and exit
+      --images-dir IMAGES_DIR
+                            Directory containing pill images
+      --bbox-csv BBOX_CSV   Path to CSV with bounding box annotations
+      --batch-size BATCH_SIZE
+                            Batch size for training
+      --epochs EPOCHS       Number of epochs to train
+      --lr LR               Learning rate
+      --lambda-bbox LAMBDA_BBOX
+                            Weight for bounding box loss
+      --output-dir OUTPUT_DIR
+                            Directory to save model checkpoints
+      --checkpoint-interval CHECKPOINT_INTERVAL
+                            Save checkpoint every N epochs
+      --latent-dim LATENT_DIM
+                            Dimensionality of latent space
+
+
+La ejecución de ese script produce pesos (`.pt`) y logs (`.csv`). Una vez entrenado podemos evaluarlo de la siguiente forma:
+
+    (venv) » python -m src.models.net --params data/params/model_epoch_005.pt --latent-dim 16 --output tmp/prueba_reconstruccion_modelo.png
+     open tmp/prueba_reconstruccion_modelo.png
+
+La calidad de la reconstrucción es una proxy de la calidad de las características.
+
+
+
 
 
 </details>

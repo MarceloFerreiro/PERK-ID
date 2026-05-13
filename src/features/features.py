@@ -27,8 +27,8 @@ _FEATURE_REGISTRY = {
 
 def _load_config():
     """Load feature configuration from TOML file."""
-    #config_path = Path(__file__).parent / "config.toml"
-    config_path = "config.toml"
+    config_path = Path(__file__).parent.parent.parent / "config.toml"
+    #config_path = "config.toml"
     with open(config_path, "rb") as f:
         return tomllib.load(f)
 

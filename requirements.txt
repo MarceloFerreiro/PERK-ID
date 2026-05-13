@@ -4,3 +4,5 @@ requests
 tqdm
 python-dotenv
 scikit-image
+torch
+torchvision
