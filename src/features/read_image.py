@@ -33,9 +33,9 @@ def read_image(path: Path, target_size: int = 256) -> np.ndarray | None:
                 image = image[:, :, 0]
 
         h, w = image.shape[:2]
-        if h == 0 or w == 0:
-            return None
+        if h == 0 or w == 0: return None
 
+        # recorta conservando el aspect ratio a 256
         scale = target_size / min(h, w)
         new_h = max(target_size, int(round(h * scale)))
         new_w = max(target_size, int(round(w * scale)))

@@ -25,9 +25,9 @@ def _normalize_rows(matrix: np.ndarray) -> np.ndarray:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Evalua Top-1/Top-K sobre un indice de features")
     parser.add_argument("--features", type=Path, default=Path("data/features.npz"),
-                        help="Ruta a features.npz (matrix + paths)")
+                        help="Ruta al índice .npz")
     parser.add_argument("--images-dir", type=Path, default=None,
-                        help="Directorio con imagenes si las rutas del npz no existen")
+                        help="Directorio con imagenes")
     parser.add_argument("--eval-size", type=int, default=200,
                         help="Numero de imagenes para evaluar (muestreo aleatorio)")
     parser.add_argument("--topk", type=int, default=5,

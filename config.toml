@@ -1,0 +1,30 @@
+[features]
+enabled = ["GLCM", "HU_MOMENTS", "LBP"]
+
+[features.GLCM]
+enabled = true
+levels = 32
+distances = [1]
+angles = [0, 0.7854, 1.5708, 2.3562]  # [0, π/4, π/2, 3π/4]
+symmetric = true
+normed = true
+
+[features.HU_MOMENTS]
+enabled = true
+
+[features.LBP]
+enabled = true
+radius = 3
+n_points = 24
+bins = 59
+method = "uniform"
+
+[features.HIST]
+enabled = false
+bins = 20
+
+[features.SIFT]
+enabled = false
+n_octaves = 4
+n_bins = 24
+n_hist = 3

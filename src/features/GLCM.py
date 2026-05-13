@@ -5,28 +5,33 @@ from skimage.feature import graycomatrix, graycoprops
 
 from src.utils.log import _log_timed
 
-def GLCM(image: np.ndarray | None) -> np.ndarray:
+def GLCM(image: np.ndarray | None, levels: int = 32, distances: list = None, 
+         angles: list = None, symmetric: bool = True, normed: bool = True, **kwargs) -> np.ndarray:
     """Compute GLCM texture descriptors: energy, entropy, contrast, correlation, homogeneity."""
     inicio = time()
     if image is None:
         return np.zeros(5, dtype=np.float32)
+
+    if distances is None:
+        distances = [1]
+    if angles is None:
+        angles = [0.0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]
 
     if image.ndim == 3:
         gray = color.rgb2gray(image)
     else:
         gray = image.astype(np.float32) / 255.0
 
-    levels = 32
     quant = util.img_as_ubyte(gray)
     quant = (quant // (256 // levels)).astype(np.uint8)
 
     glcm = graycomatrix(
         quant,
-        distances=[1],
-        angles=[0.0, np.pi / 4, np.pi / 2, 3 * np.pi / 4],
+        distances=distances,
+        angles=angles,
         levels=levels,
-        symmetric=True,
-        normed=True,
+        symmetric=symmetric,
+        normed=normed,
     )
 
     energy = graycoprops(glcm, "energy").mean()

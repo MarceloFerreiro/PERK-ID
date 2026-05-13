@@ -6,7 +6,7 @@ from skimage.feature import SIFT as SkimageSIFT
 
 from src.utils.log import _log_timed
 
-def SIFT(image: np.ndarray | None, n_octaves: int = 4, n_bins: int = 24, n_hist: int = 3) -> np.ndarray:
+def SIFT(image: np.ndarray | None, n_octaves: int = 4, n_bins: int = 24, n_hist: int = 3, **kwargs) -> np.ndarray:
     """Compute a fixed-length SIFT feature vector for an image."""
     inicio = time()
     if image is None:

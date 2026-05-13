@@ -1,5 +1,14 @@
 # PERK-ID
 
+<details> 
+<summary> TODO </summary>
+
+- transformaciones mas chulas
+- hacer un script que sea postprocess index
+- query con nn de scikit learn
+- nn 
+</details>
+
 <details>
 <summary> Enunciado de la práctica </summary>
 
@@ -37,14 +46,56 @@ Finalmente, envía en el Campus Virtual el enlace al repositorio de GitHub de tu
 <details>
 <summary> Como usar </summary>
 
-link a las imágenes: https://drive.google.com/file/d/1c4pNwsGYY6k2csR25O8CRM-CscworUFK/view?usp=sharing
+Entorno
+    
+    git clone https://github.com/MarceloFerreiro/PERK-ID
+    cd PERK-ID
+    ./scripts/entorno.sh
 
-El .csv que nos interesa es el ``data/dataset_con_imágenes.csv``. 
+Descargar dataset, necesita el `.env`
 
-El `src/query.py` te permite pasarle una imagen por argumento y te genera un html con los resultados. Hay una pastilla `data/test/test.jpg` para probar.
+    python -m src.scraper 
 
-Las caroetas pruebas y preprocesado ambas tienen un `src/preprocesado/extract_features.py`, ambos son iguales.
 
-La app tocha está en la carpeta PillIdentifier.
+Construir índice
+
+
+    (venv) » python -m src.images2index -h
+    usage: python -m src.images2index [-h] [--dir DIR] [--workers WORKERS] [--out OUT] [--save-every SAVE_EVERY] [-v]
+    
+    options:
+      -h, --help            show this help message and exit
+      --dir DIR
+      --workers WORKERS     Número de hilos a usar
+      --out OUT             Ruta al índice .npz
+      --save-every SAVE_EVERY
+                            Cada cuantas imágenes se actualiza el indice en disco
+
+    
+Evaluar 
+
+    
+    (venv) » python -m src.eval -h
+    usage: python -m src.eval [-h] [--features FEATURES] [--images-dir IMAGES_DIR] [--eval-size EVAL_SIZE] [--topk TOPK] [--seed SEED]
+    
+    Evalua Top-1/Top-K sobre un indice de features
+    
+    options:
+      -h, --help            show this help message and exit
+      --features FEATURES   Ruta al índice .npz
+      --images-dir IMAGES_DIR
+                            Directorio con imagenes
+      --eval-size EVAL_SIZE
+                            Numero de imagenes para evaluar (muestreo aleatorio)
+      --topk TOPK           K para Top-K accuracy
+      --seed SEED
+
+Tanto para la construcción del índice como para la evaluación, se hará uso interno de `config.toml`
+
+Generar dataset de bouding box [el json se genera en este enlace](https://2d-on-2d.annotate.photo/):
+
+    (venv) » python -m src.json2csv 2D-on-2D_labeling_save\(1\).json tmp.csv
+Done — 36 row(s) written to: tmp.csv
+
 
 </details>
