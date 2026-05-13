@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 
-from src.images2index import compute_features
+from src.features import features
 
 
 def _resolve_image_path(raw_path: str, images_dir: Path | None) -> Path | None:
@@ -25,9 +25,9 @@ def _normalize_rows(matrix: np.ndarray) -> np.ndarray:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Evalua Top-1/Top-K sobre un indice de features")
     parser.add_argument("--features", type=Path, default=Path("data/features.npz"),
-                        help="Ruta a features.npz (matrix + paths)")
+                        help="Ruta al índice .npz")
     parser.add_argument("--images-dir", type=Path, default=None,
-                        help="Directorio con imagenes si las rutas del npz no existen")
+                        help="Directorio con imagenes")
     parser.add_argument("--eval-size", type=int, default=200,
                         help="Numero de imagenes para evaluar (muestreo aleatorio)")
     parser.add_argument("--topk", type=int, default=5,
@@ -72,7 +72,7 @@ def main() -> int:
             skipped += 1
             continue
 
-        q = compute_features(img_path).astype(np.float32)
+        q = features(img_path, transformed=False).astype(np.float32)
         q_norm = q / (np.linalg.norm(q) + 1e-10)
         sims = db_norm @ q_norm
 

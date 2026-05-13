@@ -2,11 +2,9 @@ from time import time
 import numpy as np
 from skimage import util
 
+from src.utils.log import _log_timed
 
-def _log_timed(_elapsed: float, _feature: str, _extra: str) -> None:
-    return
-
-def HIST(image: np.ndarray | None, bins: int = 32) -> np.ndarray:
+def HIST(image: np.ndarray | None, bins: int = 20, **kwargs) -> np.ndarray:
     """Compute concatenated per-channel histograms plus per-channel means."""
     inicio = time()
     if image is None:

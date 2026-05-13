@@ -1,5 +1,7 @@
 *.png
 *.swp
+*.json
+*.csv
 .env
 .DS_Store
 
