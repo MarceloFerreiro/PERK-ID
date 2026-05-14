@@ -11,6 +11,7 @@ from src.features.GLCM import GLCM
 from src.features.HIST import HIST
 from src.features.HU_MOMENTS import HU_MOMENTS
 from src.features.LBP import LBP
+from src.features.ORB import ORB
 from src.features.SIFT import SIFT
 from src.features.read_image import read_image
 from src.features.transform import transform
@@ -20,6 +21,7 @@ _FEATURE_REGISTRY = {
     "HIST": HIST,
     "HU_MOMENTS": HU_MOMENTS,
     "LBP": LBP,
+    "ORB": ORB,
     "SIFT": SIFT,
 }
 

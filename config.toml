@@ -1,5 +1,5 @@
 [features]
-enabled = ["SIFT", "GLCM", "HU_MOMENTS", "LBP", "HIST"]
+enabled = ["SIFT", "GLCM", "HU_MOMENTS", "LBP", "HIST", "ORB"]
 
 [features.GLCM]
 levels = 32
@@ -23,3 +23,8 @@ bins = 20
 n_octaves = 6
 n_bins = 10
 n_hist = 4
+
+[features.ORB]
+n_features = 500
+scale_factor = 1.2
+n_levels = 8

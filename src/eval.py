@@ -5,8 +5,10 @@ from time import time
 import numpy as np
 from tqdm import tqdm
 
+
 from src.Ranker import Ranker
 from src.features import features, read_image
+from src.utils.cummulative_rank import cummulative_rank
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Evalua Top-1/Top-K sobre un indice de features")
@@ -16,7 +18,7 @@ def main() -> int:
                         help="Directorio con imagenes")
     parser.add_argument("--eval-size", type=int, default=200,
                         help="Numero de imagenes para evaluar (muestreo aleatorio)")
-    parser.add_argument("--topk", type=int, default=5,
+    parser.add_argument("--topk", type=int, default=10,
                         help="K para Top-K accuracy")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
@@ -33,14 +35,7 @@ def main() -> int:
     matrix = data["matrix"].astype(np.float32)
     paths = data["paths"]
 
-    if matrix.ndim != 2:
-        print("[ERROR] 'matrix' debe ser 2D (N x D)")
-        return 1
-
     n = matrix.shape[0]
-    if n == 0:
-        print("[ERROR] 'matrix' esta vacia")
-        return 1
 
     eval_size = min(max(args.eval_size, 1), n)
     rng = np.random.default_rng(args.seed)
@@ -52,6 +47,7 @@ def main() -> int:
     acck = []
     secs = []
     dist = []
+    rank = []
 
     skipped = 0
 
@@ -68,6 +64,7 @@ def main() -> int:
         acck.append(1 if idx in indices else 0)
         dist.append(distances[0])
         secs.append(time() - inicio)
+        rank.append(np.where(indices == idx)[0][0] if idx in indices else -1)
 
     if not acc1:
         print("[ERROR] No se pudo evaluar ninguna imagen (rutas invalidas)")
@@ -78,6 +75,10 @@ def main() -> int:
     print(f"Top-{args.topk} Accuracy: {np.mean(acck):.4f}")
     print(f"Distancia media a la pastilla más cercana: {np.mean(dist):.4f}")
     print(f"Duración media inferencia: {np.mean(secs):.4f}s")
+    print(f"Ranking medio: {np.mean(rank):.4f}")
+    cummulative_rank(rank)
+
+
     return 0
 
 

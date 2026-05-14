@@ -99,9 +99,8 @@ def main():
                         processed += 1
                         
                         if args.save_every > 0 and args.out and len(results) % args.save_every == 0:
-                            _safe_print(f"[*] Saving partial: {len(results)} results")
                             _save_partial(args.out, paths, results)
-                            _safe_print(f"[*] Saved {len(results)} results to {args.out}")
+                            _safe_print(f"[*] Guardados {len(results)} resultados a {args.out}")
             except Exception as loop_exc:
                 _safe_print(f"[!] Loop exception at processed={processed}: {loop_exc}")
                 import traceback

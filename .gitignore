@@ -6,7 +6,8 @@
 .DS_Store
 
 canonicas/
-data/
+data/*
+!data/icono.jpeg
 __pycache__/
 
 /imagenes
