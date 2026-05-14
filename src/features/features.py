@@ -15,7 +15,6 @@ from src.features.SIFT import SIFT
 from src.features.read_image import read_image
 from src.features.transform import transform
 
-# Feature registry
 _FEATURE_REGISTRY = {
     "GLCM": GLCM,
     "HIST": HIST,
@@ -24,14 +23,10 @@ _FEATURE_REGISTRY = {
     "SIFT": SIFT,
 }
 
-
 def _load_config():
-    """Load feature configuration from TOML file."""
     config_path = Path(__file__).parent.parent.parent / "config.toml"
-    #config_path = "config.toml"
     with open(config_path, "rb") as f:
         return tomllib.load(f)
-
 
 def _get_enabled_features():
     """Get enabled features and their hyperparameters from config."""
@@ -44,23 +39,15 @@ def _get_enabled_features():
         if feature_name in _FEATURE_REGISTRY:
             feature_func = _FEATURE_REGISTRY[feature_name]
             hyperparams = features_config.get(feature_name, {})
-            # Remove 'enabled' key if present
-            hyperparams = {k: v for k, v in hyperparams.items() if k != "enabled"}
+            hyperparams = {k: v for k, v in hyperparams.items()}
             result.append((feature_func, hyperparams))
     
     return result
 
 
-def features(path: Path, transformed: bool = False) -> np.ndarray | None:
-    image = read_image(path)
-    if image is None:
-        return None
-    if transformed:
-        image = transform(image)
-
+def features(image, transformed = False) -> np.ndarray | None:
+    if transformed: image = transform(image)
     enabled_features = _get_enabled_features()
-    if not enabled_features:
-        return np.empty((0,), dtype=np.float32)
-    
+    if not enabled_features: return np.empty((0,), dtype=np.float32)
     feats = [f(image, **params) for f, params in enabled_features]
     return np.concatenate([f.ravel() for f in feats]).astype(np.float32)

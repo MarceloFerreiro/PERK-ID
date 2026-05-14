@@ -6,3 +6,4 @@ python-dotenv
 scikit-image
 torch
 torchvision
+scikit-learn

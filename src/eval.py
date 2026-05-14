@@ -5,23 +5,8 @@ from time import time
 import numpy as np
 from tqdm import tqdm
 
-from src.features import features
-
-
-def _resolve_image_path(raw_path: str, images_dir: Path | None) -> Path | None:
-    candidate = Path(raw_path)
-    if candidate.exists():
-        return candidate
-    if images_dir is None:
-        return None
-    alt = images_dir / candidate.name
-    return alt if alt.exists() else None
-
-
-def _normalize_rows(matrix: np.ndarray) -> np.ndarray:
-    norms = np.linalg.norm(matrix, axis=1, keepdims=True)
-    return matrix / (norms + 1e-10)
-
+from src.Ranker import Ranker
+from src.features import features, read_image
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Evalua Top-1/Top-K sobre un indice de features")
@@ -61,28 +46,27 @@ def main() -> int:
     rng = np.random.default_rng(args.seed)
     eval_indices = rng.choice(n, size=eval_size, replace=False)
 
-    db_norm = _normalize_rows(matrix)
+    ranker = Ranker(matrix, paths, n_neighbors=args.topk)
 
     acc1 = []
     acck = []
     secs = []
+    dist = []
 
     skipped = 0
 
     for idx in tqdm(eval_indices, total=len(eval_indices), unit="img", desc="Evaluando"):
         inicio  = time()
-        img_path = _resolve_image_path(str(paths[idx]), args.images_dir)
+        img_path = Path(paths[idx])
         if img_path is None:
             skipped += 1
             continue
 
-        q = features(img_path, transformed=False).astype(np.float32)
-        q_norm = q / (np.linalg.norm(q) + 1e-10)
-        sims = db_norm @ q_norm
+        indices, distances, _ = ranker.rank(read_image(img_path), transformed=True)
 
-        ranked = np.argsort(-sims)
-        acc1.append(1 if ranked[0] == idx else 0)
-        acck.append(1 if idx in ranked[: args.topk] else 0)
+        acc1.append(1 if indices[0] == idx else 0)
+        acck.append(1 if idx in indices else 0)
+        dist.append(distances[0])
         secs.append(time() - inicio)
 
     if not acc1:
@@ -92,6 +76,7 @@ def main() -> int:
     print(f"Evaluadas: {len(acc1)}  Omitidas: {skipped}")
     print(f"Top-1 Accuracy: {np.mean(acc1):.4f}")
     print(f"Top-{args.topk} Accuracy: {np.mean(acck):.4f}")
+    print(f"Distancia media a la pastilla más cercana: {np.mean(dist):.4f}")
     print(f"Duración media inferencia: {np.mean(secs):.4f}s")
     return 0
 

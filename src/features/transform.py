@@ -33,7 +33,7 @@ def transform(img):
     # back to PIL for PIL-only ops
     img = Image.fromarray(arr)
 
-    # --- Blur ---
+    ## --- Blur ---
     if random.random() < 0.4:
         img = img.filter(
             ImageFilter.GaussianBlur(

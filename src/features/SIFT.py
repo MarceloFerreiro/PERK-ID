@@ -9,8 +9,10 @@ from src.utils.log import _log_timed
 def SIFT(image: np.ndarray | None, n_octaves: int = 4, n_bins: int = 24, n_hist: int = 3, **kwargs) -> np.ndarray:
     """Compute a fixed-length SIFT feature vector for an image."""
     inicio = time()
+    #tamano_vector = n_bins*n_hist
+    tamano_vector = 128
     if image is None:
-        return np.zeros(128, dtype=np.float32)
+        return np.zeros(tamano_vector, dtype=np.float32)
 
     if image.ndim == 3:
         gray = color.rgb2gray(image)
@@ -21,12 +23,13 @@ def SIFT(image: np.ndarray | None, n_octaves: int = 4, n_bins: int = 24, n_hist:
     try:
         sift.detect_and_extract(gray)
     except Exception:
-        return np.zeros(72, dtype=np.float32)
+        return np.zeros(tamano_vector, dtype=np.float32)
     descriptors = sift.descriptors
     if descriptors is None or descriptors.size == 0:
-        return np.zeros(72, dtype=np.float32)
+        return np.zeros(tamano_vector, dtype=np.float32)
 
     _log_timed(time() - inicio, "SIFT", f"{descriptors.shape[0]} keypoints")
+    assert len(descriptors.mean(axis=0).astype(np.float32)) == tamano_vector, 'OJO! SIFT() creo un vector de mal tamaño'
     return descriptors.mean(axis=0).astype(np.float32)
 
 

@@ -7,7 +7,7 @@ import threading
 
 from tqdm import tqdm
 
-from src.features import features
+from src.features import features, read_image
 
 _WORKERS = 0
 _VERBOSE = False
@@ -60,7 +60,7 @@ def main():
         initializer=_init_worker,
         initargs=(_VERBOSE, args.workers),
     ) as pool:
-        futures = {pool.submit(features, p): p for p in paths}
+        futures = {pool.submit(lambda p: features(read_image(p)), p): p for p in paths}
         with tqdm(
             total=len(paths),
             unit="imagenes",
@@ -74,7 +74,7 @@ def main():
                 while pending:
                     done, pending = wait(
                         pending,
-                        timeout=max(1, args.stalled_secs),
+                        timeout=max(1, 10),
                         return_when=FIRST_COMPLETED,
                     )
                     if not done:

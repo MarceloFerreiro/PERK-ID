@@ -5,8 +5,8 @@
 
 - transformaciones mas chulas
 - hacer un script que sea postprocess index
-- query con nn de scikit learn
-- nn 
+- [x] query con nn de scikit learn
+- [x] nn 
 </details>
 
 <details>
@@ -42,9 +42,16 @@ Finalmente, envía en el Campus Virtual el enlace al repositorio de GitHub de tu
 
 </details>
 
+> [!WARNING]
+> Ojo si cambiais `config.json`, eso afecta a todo. Es decir, el `.npz` de características que generais con una configuracion (con `src/images2index.py`) solo se puede evaluar (con `src/eval.py`) con la misma configuracion. Hay que tenerlo presente y bautizar bien a esos archivos `.npz`. 
 
 <details>
 <summary> Como usar </summary>
+
+
+
+
+
 
 Entorno
     
