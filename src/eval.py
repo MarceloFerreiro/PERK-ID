@@ -21,6 +21,7 @@ def main() -> int:
     parser.add_argument("--topk", type=int, default=10,
                         help="K para Top-K accuracy")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--no-transform", action="store_true", help="Evaluar sin data augmentation")
     args = parser.parse_args()
 
     if not args.features.exists():
@@ -58,7 +59,7 @@ def main() -> int:
             skipped += 1
             continue
 
-        indices, distances, _ = ranker.rank(read_image(img_path), transformed=True)
+        indices, distances, _ = ranker.rank(read_image(img_path), transformed=not args.no_transform)
 
         acc1.append(1 if indices[0] == idx else 0)
         acck.append(1 if idx in indices else 0)

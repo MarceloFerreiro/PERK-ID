@@ -6,26 +6,42 @@ import random
 import argparse
 from pathlib import Path
 
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
+
 from .read_image import read_image
 
+def _load_transform_config():
+    config_path = Path(__file__).parent.parent.parent / "config.toml"
+    with open(config_path, "rb") as f:
+        return tomllib.load(f).get("transform", {})
+
 def transform(img):
+    cfg = _load_transform_config()
     arr = np.array(img)
     arr_f = arr.astype(np.float32) / 255.0
 
     # --- Salt & pepper noise ---
-    if random.random() < 0.5:
+    if random.random() < cfg.get("noise_prob", 0.3):
         arr_f = random_noise(
             arr_f,
             mode="s&p",
-            amount=random.uniform(0.001, 0.02)
+            amount=random.uniform(cfg.get("noise_amount_min", 0.001), cfg.get("noise_amount_max", 0.008))
         )
 
     # --- Affine transform ---
+    rot = cfg.get("rotation_deg", 15.0)
+    shear = cfg.get("shear_deg", 5.0)
+    scale_min = cfg.get("scale_min", 0.85)
+    scale_max = cfg.get("scale_max", 1.15)
+    trans = cfg.get("translation_px", 5.0)
     at = AffineTransform(
-        scale=(random.uniform(0.7, 1.3), random.uniform(0.9, 1.1)),
-        rotation=random.uniform(-25, 25) * np.pi / 180.0,
-        shear=random.uniform(-15, 15) * np.pi / 180.0,
-        translation=(random.uniform(-10, 10), random.uniform(-10, 10)),
+        scale=(random.uniform(scale_min, scale_max), random.uniform(scale_min, scale_max)),
+        rotation=random.uniform(-rot, rot) * np.pi / 180.0,
+        shear=random.uniform(-shear, shear) * np.pi / 180.0,
+        translation=(random.uniform(-trans, trans), random.uniform(-trans, trans)),
     )
     arr_f = warp(arr_f, inverse_map=at, mode="edge", preserve_range=True)
     arr = np.clip(arr_f * 255.0, 0, 255).astype(np.uint8)
@@ -33,19 +49,21 @@ def transform(img):
     # back to PIL for PIL-only ops
     img = Image.fromarray(arr)
 
-    ## --- Blur ---
-    if random.random() < 0.4:
+    # --- Blur ---
+    if random.random() < cfg.get("blur_prob", 0.3):
         img = img.filter(
             ImageFilter.GaussianBlur(
-                radius=random.uniform(0.5, 2.0)
+                radius=random.uniform(cfg.get("blur_radius_min", 0.5), cfg.get("blur_radius_max", 1.5))
             )
         )
 
     # --- Color jitter ---
-    if random.random() < 0.8:
-        img = ImageEnhance.Brightness(img).enhance( random.uniform(0.7, 1.3))
-        img = ImageEnhance.Contrast(img).enhance(   random.uniform(0.7, 1.3))
-        img = ImageEnhance.Color(img).enhance(      random.uniform(0.7, 1.3))
+    if random.random() < cfg.get("jitter_prob", 0.6):
+        jmin = cfg.get("jitter_min", 0.85)
+        jmax = cfg.get("jitter_max", 1.15)
+        img = ImageEnhance.Brightness(img).enhance(random.uniform(jmin, jmax))
+        img = ImageEnhance.Contrast(img).enhance(  random.uniform(jmin, jmax))
+        img = ImageEnhance.Color(img).enhance(     random.uniform(jmin, jmax))
     return np.array(img)
 
 

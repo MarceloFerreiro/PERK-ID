@@ -5,7 +5,10 @@ import sys
 
 import numpy as np
 
-import tomllib
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
 
 from src.features.GLCM import GLCM
 from src.features.HIST import HIST
