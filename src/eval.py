@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 from time import time
+import tomllib
 
 import numpy as np
 from tqdm import tqdm
@@ -8,7 +9,14 @@ from tqdm import tqdm
 
 from src.Ranker import Ranker
 from src.features import features, read_image
+from src.features.BoW import BoWExtractor
 from src.utils.cummulative_rank import cummulative_rank
+
+def load_config():
+    config_path = Path(__file__).parent.parent / "config.toml"
+    with open(config_path, "rb") as f:
+        return tomllib.load(f)
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Evalua Top-1/Top-K sobre un indice de features")
@@ -20,6 +28,7 @@ def main() -> int:
                         help="Numero de imagenes para evaluar (muestreo aleatorio)")
     parser.add_argument("--topk", type=int, default=10,
                         help="K para Top-K accuracy")
+    parser.add_argument("--bow", type=Path, default=Path("data/bow.pkl"), help="Ruta al modelo BoW")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--no-transform", action="store_true", help="Evaluar sin data augmentation")
     args = parser.parse_args()
@@ -42,7 +51,14 @@ def main() -> int:
     rng = np.random.default_rng(args.seed)
     eval_indices = rng.choice(n, size=eval_size, replace=False)
 
-    ranker = Ranker(matrix, paths, n_neighbors=args.topk)
+
+    bow_extractor=None
+    if args.bow.exists():
+        config = load_config()
+        n_clusters = config.get("features", {}).get("bow", {}).get("n_clusters", 100)
+        bow_extractor = BoWExtractor.load(args.bow, n_clusters=n_clusters)
+
+    ranker = Ranker(matrix, paths, n_neighbors=args.topk, bow_extractor=bow_extractor)
 
     acc1 = []
     acck = []
@@ -77,6 +93,7 @@ def main() -> int:
     print(f"Distancia media a la pastilla más cercana: {np.mean(dist):.4f}")
     print(f"Duración media inferencia: {np.mean(secs):.4f}s")
     print(f"Ranking medio: {np.mean(rank):.4f}")
+    print(f"La pastilla quedo fuera del top-{args.topk} en: {sum([1 for r in rank if r == -1])}/{eval_size} casos")
     cummulative_rank(rank)
 
 

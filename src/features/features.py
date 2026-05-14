@@ -50,9 +50,49 @@ def _get_enabled_features():
     return result
 
 
-def features(image, transformed = False) -> np.ndarray | None:
-    if transformed: image = transform(image)
-    enabled_features = _get_enabled_features()
-    if not enabled_features: return np.empty((0,), dtype=np.float32)
+def _get_enabled_features_excluding(exclude_feature: str):
+    """Get enabled features excluding a specific feature."""
+    enabled = _get_enabled_features()
+    return [(f, params) for f, params in enabled if f.__name__ != exclude_feature]
+
+
+def extract_sift_descriptors(image, transformed=False) -> np.ndarray:
+    """Extract raw SIFT descriptors (not averaged).
+    
+    Returns:
+        np.ndarray: Array of shape (n_descriptors, 128) or (0, 128) if no descriptors found
+    """
+    if transformed: 
+        image = transform(image)
+    
+    config = _load_config()
+    sift_params = config.get("features", {}).get("SIFT", {})
+    descriptors = SIFT(image, **sift_params)
+    return descriptors
+
+
+def features(image, transformed=False, include_sift=False) -> np.ndarray | None:
+    """Extract features from image.
+    
+    Args:
+        image: Input image
+        transformed: Whether to apply transform
+        include_sift: Whether to include SIFT in the feature vector (averaged)
+    
+    Returns:
+        np.ndarray: Feature vector
+    """
+    if transformed: 
+        image = transform(image)
+    
+    if include_sift:
+        enabled_features = _get_enabled_features()
+    else:
+        enabled_features = _get_enabled_features_excluding("SIFT")
+    
+    if not enabled_features: 
+        return np.empty((0,), dtype=np.float32)
+    
     feats = [f(image, **params) for f, params in enabled_features]
     return np.concatenate([f.ravel() for f in feats]).astype(np.float32)
+

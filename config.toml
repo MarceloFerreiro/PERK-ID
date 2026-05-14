@@ -1,5 +1,5 @@
 [features]
-enabled = ["SIFT", "GLCM", "HU_MOMENTS", "LBP", "HIST", "ORB"]
+enabled = ["SIFT", "GLCM", "HU_MOMENTS", "LBP",]
 
 [features.GLCM]
 levels = 32
@@ -20,11 +20,13 @@ method = "uniform"
 bins = 20
 
 [features.SIFT]
+# https://scikit-image.org/docs/stable/api/skimage.feature.html#skimage.feature.SIFT
 n_octaves = 6
 n_bins = 10
 n_hist = 4
 
 [features.ORB]
+# https://scikit-image.org/docs/stable/api/skimage.feature.html#skimage.feature.ORB
 n_features = 500
 scale_factor = 1.2
 n_levels = 8
@@ -44,3 +46,18 @@ blur_radius_max = 2.0
 jitter_prob = 0.8
 jitter_min = 0.7
 jitter_max = 1.3
+
+[features.bow]
+n_clusters = 400
+
+[ranker]
+# https://scikit-learn.org/stable/modules/metrics.html
+#
+#  {'infinity', 'canberra', 'hamming', 'p', 'cityblock', 
+#  'braycurtis', 'sokalsneath', 'cosine', 'nan_euclidean', 
+#  'dice', 'correlation', 'precomputed', 'seuclidean', 
+#  'chebyshev', 'rogerstanimoto', 'jaccard', 'haversine', 
+#  'sokalmichener', 'yule', 'sqeuclidean', 'manhattan', 'l1', 
+#  'russellrao', 'minkowski', 'l2', 'pyfunc', 'mahalanobis', 'euclidean'}
+metric = 'cosine'
+n_neighbors = 10

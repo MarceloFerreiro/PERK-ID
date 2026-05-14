@@ -5,7 +5,7 @@ def cummulative_rank(ranks):
     valid_ranks = [r for r in ranks if r != -1]
     
     if not valid_ranks:
-        print("No hay rankings dentro del tok. O hiciste un bug o --eval-size es muy pequeño.")
+        print("No hay rankings dentro del k. O hiciste un bug o --eval-size es muy pequeño.")
         return
     
     max_rank = max(valid_ranks) + 1
