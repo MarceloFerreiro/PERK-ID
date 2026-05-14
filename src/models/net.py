@@ -114,11 +114,7 @@ def compute_loss(
     # Bounding box loss (if available)
     if has_bbox and bbox_mask.sum() > 0:
         bbox_pred = model.predict_bbox(latent)
-        # Normalize bounding box coordinates to [0, 1] for better training stability
-        # Assuming bbox coordinates are in pixel space (0-256)
-        bboxes_norm = bboxes / 256.0
-        # Only compute loss for items that have bboxes
-        bbox_loss = F.smooth_l1_loss(bbox_pred[bbox_mask], bboxes_norm[bbox_mask])
+        bbox_loss = F.smooth_l1_loss(bbox_pred[bbox_mask], bboxes[bbox_mask])
         loss_dict["bbox_loss"] = bbox_loss.item()
         total_loss = recon_loss + lambda_bbox * bbox_loss
     
