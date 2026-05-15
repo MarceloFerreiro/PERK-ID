@@ -37,8 +37,8 @@ def _process_image(image_path: Path) -> tuple[Path, np.ndarray, np.ndarray]:
     """
     try:
         image = read_image(image_path)
-        feat_vector = features(image, transformed=False, include_sift=False)
-        sift_desc = extract_sift_descriptors(image, transformed=False)
+        feat_vector = features(image, include_sift=False)
+        sift_desc = extract_sift_descriptors(image)
         return (image_path, feat_vector, sift_desc)
     except Exception as e:
         raise RuntimeError(f"Failed to process {image_path}: {e}") from e

@@ -8,9 +8,9 @@ from tqdm import tqdm
 
 
 from src.Ranker import Ranker
-from src.features import features, read_image
+from src.features import features, read_image, transform
 from src.features.BoW import BoWExtractor
-from src.utils.cummulative_rank import cummulative_rank
+from src.utils import cummulative_rank, grid_rank
 
 def load_config():
     config_path = Path(__file__).parent.parent / "config.toml"
@@ -30,7 +30,6 @@ def main() -> int:
                         help="K para Top-K accuracy")
     parser.add_argument("--bow", type=Path, default=Path("data/bow.pkl"), help="Ruta al modelo BoW")
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--no-transform", action="store_true", help="Evaluar sin data augmentation")
     args = parser.parse_args()
 
     if not args.features.exists():
@@ -66,6 +65,12 @@ def main() -> int:
     dist = []
     rank = []
 
+    num_pills_grid = 5
+    pills_images = []
+    num_rank_grid = 10
+    rank_images = []
+    dists = []
+
     skipped = 0
 
     for idx in tqdm(eval_indices, total=len(eval_indices), unit="img", desc="Evaluando"):
@@ -75,8 +80,15 @@ def main() -> int:
             skipped += 1
             continue
 
-        indices, distances, _ = ranker.rank(read_image(img_path), transformed=not args.no_transform)
+        img_tranformed = transform(read_image(img_path))
 
+        indices, distances, ranked_paths = ranker.rank(img_tranformed)
+
+        if num_pills_grid > len(pills_images):
+            pills_images.append(img_tranformed)
+            rank_images.append([read_image(p) for p in ranked_paths[:num_rank_grid]])
+            dists.append(distances[:num_rank_grid])
+        
         acc1.append(1 if indices[0] == idx else 0)
         acck.append(1 if idx in indices else 0)
         dist.append(distances[0])
@@ -87,6 +99,8 @@ def main() -> int:
         print("[ERROR] No se pudo evaluar ninguna imagen (rutas invalidas)")
         return 1
 
+
+
     print(f"Evaluadas: {len(acc1)}  Omitidas: {skipped}")
     print(f"Top-1 Accuracy: {np.mean(acc1):.4f}")
     print(f"Top-{args.topk} Accuracy: {np.mean(acck):.4f}")
@@ -95,6 +109,7 @@ def main() -> int:
     print(f"Ranking medio: {np.mean(rank):.4f}")
     print(f"La pastilla quedo fuera del top-{args.topk} en: {sum([1 for r in rank if r == -1])}/{eval_size} casos")
     cummulative_rank(rank)
+    grid_rank(pills_images, rank_images, dists)
 
 
     return 0

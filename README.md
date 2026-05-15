@@ -47,14 +47,6 @@ Finalmente, envía en el Campus Virtual el enlace al repositorio de GitHub de tu
 > [!WARNING]
 > Ojo si cambiais `config.json`, eso afecta a todo. Es decir, el `.npz` de características que generais con una configuracion (con `src/images2index.py`) solo se puede evaluar (con `src/eval.py`) con la misma configuracion. Hay que tenerlo presente y bautizar bien a esos archivos `.npz`. 
 
-<details>
-<summary> Como usar </summary>
-
-
-
-
-
-
 Entorno
     
     git clone https://github.com/MarceloFerreiro/PERK-ID
@@ -87,6 +79,8 @@ Entorno
     (venv) » python -m src.features.transform --h 5 --w 8 
     open tmp/transform_grid.png
 
+![erro ca imaxe](https://github.com/MarceloFerreiro/PERK-ID/blob/main/data/docs/transform_grid.png?raw=true)
+
 Tenemos que ser conscientes que la calidad de la evaluación depende de lo bueno que sea el aumento de datos.
 
 
@@ -105,6 +99,40 @@ Tenemos que ser conscientes que la calidad de la evaluación depende de lo bueno
                             Numero de imagenes para evaluar (muestreo aleatorio)
       --topk TOPK           K para Top-K accuracy
       --seed SEED
+
+Verás algo como:
+
+    Evaluadas: 50  Omitidas: 0
+    Top-1 Accuracy: 0.6400
+    Top-10 Accuracy: 0.9400
+    Distancia media a la pastilla más cercana: 0.2383
+    Duración media inferencia: 0.0871s
+    Ranking medio: 1.0200
+    La pastilla quedo fuera del top-10 en: 3/50 casos
+                           P(Ranking <= X)
+    ┌────────────────────────────────────────────────────────────┐
+    │                                                       ▗▄▄▞▀│
+    │                                      ▗▞▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▘    │
+    │                                    ▗▞▘                     │ 0.9
+    │                                  ▗▞▘                       │
+    │                               ▄▄▞▘                         │
+    │                          ▄▄▀▀▀                             │
+    │                       ▄▞▀                                  │
+    │                    ▄▞▀                                     │ 0.8
+    │              ▄▄▄▀▀▀                                        │
+    │            ▄▀                                              │
+    │          ▗▞                                                │
+    │         ▄▘                                                 │
+    │       ▗▞                                                   │
+    │      ▟▘                                                    │ 0.7
+    │    ▄▀                                                      │
+    │  ▄▀                                                        │
+    │▄▀                                                          │
+    └────────────────────────────────────────────────────────────┘
+           2             4            6            8           10
+
+
+![erro ca imaxe](https://github.com/MarceloFerreiro/PERK-ID/blob/main/data/docs/eval.png?raw=true)
 
 Tanto para la construcción del índice como para la evaluación, se hará uso interno de `config.toml`
 
@@ -146,6 +174,9 @@ La ejecución de ese script produce pesos (`.pt`) y logs (`.csv`). Una vez entre
      open tmp/prueba_reconstruccion_modelo.png
 
 La calidad de la reconstrucción es una proxy de la calidad de las características.
+
+
+![erro ca imaxe](https://github.com/MarceloFerreiro/PERK-ID/blob/main/data/docs/reconstruccion.png?raw=true)
 
 ---
 
@@ -191,5 +222,3 @@ En cualquier caso ese programa escribre un csv con:
     data/imagenes_alt/38940f4c9c13479dac706d89a17708bd.jpeg,58.11359786987305
     data/imagenes_alt/f88a7a7987f79968cb84c99e6e5e9971.jpeg,58.468685150146484
 
-
-</details>

@@ -30,11 +30,11 @@ class Ranker:
         print(bow_extractor)
         self.bow_extractor = bow_extractor
 
-    def rank(self, image: np.array, transformed: bool = False) -> list[tuple[str, float]]:
-        q = features(image, transformed=transformed).astype(np.float32)
+    def rank(self, image: np.array) -> list[tuple[str, float]]:
+        q = features(image).astype(np.float32)
         
         if self.bow_extractor is not None:
-            sift_desc = extract_sift_descriptors(image, transformed=transformed)
+            sift_desc = extract_sift_descriptors(image)
             bow_histogram = self.bow_extractor.extract_histogram(sift_desc)
             q = np.concatenate([q, bow_histogram]).astype(np.float32)
         

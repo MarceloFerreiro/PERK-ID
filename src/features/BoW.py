@@ -1,5 +1,6 @@
 import numpy as np
 import joblib
+from time import time
 from pathlib import Path
 from sklearn.cluster import KMeans
 
@@ -15,9 +16,10 @@ class BoWExtractor:
             raise ValueError("Vaites! no se le pasaron descriptores a BoW")
         
         print(f"[*] Ajustando KMeans con {self.n_clusters} clusters sobre {all_descriptors.shape[0]} descriptores... (el numero de clusters lo cambias en el toml)")
+        inicio = time()
         self.kmeans = KMeans(n_clusters=self.n_clusters, random_state=42, n_init=10, verbose=0)
         self.kmeans.fit(all_descriptors)
-        print(f"[*] Ajustado Kmeans")
+        print(f"[*] Ajustado Kmeans, tardó {time() - inicio:.2f}s.")
     
     def extract_histogram(self, descriptors: np.ndarray) -> np.ndarray:
         if descriptors.shape[0] == 0:
@@ -26,6 +28,7 @@ class BoWExtractor:
         cluster_assignments = self.kmeans.predict(descriptors)
         histogram, _ = np.histogram(cluster_assignments, bins=self.n_clusters, range=(0, self.n_clusters))
         
+        #return (histogram / histogram.sum()).astype(np.float32)
         return histogram.astype(np.float32)
     
     def save(self, path: Path) -> None:
