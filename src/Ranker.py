@@ -3,7 +3,10 @@ import argparse
 from pathlib import Path
 import numpy as np
 import csv
-import tomllib
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
 
 from src.features import features, read_image, extract_sift_descriptors
 from src.features.BoW import BoWExtractor

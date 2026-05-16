@@ -152,7 +152,10 @@ def main():
     
     # Initialize BoW extractor and fit KMeans
     from src.features.BoW import BoWExtractor
-    import tomllib
+    try:
+        import tomllib
+    except ImportError:
+        import tomli as tomllib
     config_path = Path(__file__).parent.parent / "config.toml"
     with open(config_path, "rb") as f:
         config = tomllib.load(f)

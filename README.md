@@ -180,6 +180,93 @@ La calidad de la reconstrucción es una proxy de la calidad de las característi
 
 ---
 
+## App móvil / web (FastAPI + Flutter)
+
+El prototipo CLI se migró a un servidor FastAPI y una app Flutter multiplataforma (Android, web). La app abre la cámara directamente, hace la foto y muestra los resultados más similares del índice.
+
+### Requisitos previos
+
+- Python 3.10+, virtualenv (`venvPerk`)
+- Flutter SDK (`~/flutter/bin` en el PATH)
+- Android SDK con platform-tools (`~/Android/Sdk`)
+- El índice ya construido: `data/features.npz` + `data/bow.pkl`
+
+### 1. Levantar el servidor
+
+```bash
+source venvPerk/bin/activate
+uvicorn api.main:app --host 0.0.0.0 --port 8000
+```
+
+El servidor carga el índice en memoria al arrancar y expone:
+
+| Endpoint | Descripción |
+|---|---|
+| `GET /health` | Estado del servidor y tamaño del índice |
+| `POST /query?topk=10` | Sube una imagen, devuelve los top-K más similares en JSON |
+| `GET /images/<filename>` | Sirve las imágenes del dataset |
+| `GET /` | App web (si está compilada, ver más abajo) |
+
+La IP de la máquina en la red local se ve con `hostname -I`. Todos los dispositivos en la misma WiFi pueden acceder al servidor.
+
+### 2. App Android
+
+**Primera vez** (compila en ~20-40 min, luego es rápido):
+
+```bash
+cd pillsearch
+flutter run
+```
+
+Conectar el móvil por **depuración inalámbrica** (Android 11+):
+1. Activar en Ajustes → Opciones de desarrollador → Depuración inalámbrica
+2. Parear el dispositivo:
+    ```bash
+    ~/Android/Sdk/platform-tools/adb pair <IP>:<puerto-pareo>
+    ```
+3. Conectar:
+    ```bash
+    ~/Android/Sdk/platform-tools/adb connect <IP>:<puerto>
+    ```
+4. `flutter run` detecta el dispositivo automáticamente
+
+En la app, pulsar el icono de ajustes (⚙) e introducir la URL del servidor: `http://<IP-maquina>:8000`
+
+### 3. App web
+
+**Modo desarrollo** (abre Chrome directamente):
+```bash
+cd pillsearch
+flutter run -d chrome
+```
+
+**Build estático** (queda servido por el propio servidor FastAPI):
+```bash
+cd pillsearch
+flutter build web
+# Reiniciar el servidor — la app web estará en http://<IP>:8000
+```
+
+Para instalarla como PWA: Chrome muestra un botón de instalación en la barra de direcciones. En móvil, Safari → Compartir → "Añadir a pantalla de inicio".
+
+> **Nota sobre HTTP y cámara en web:** los navegadores solo permiten acceso a la cámara en `localhost` o con HTTPS. Para usar la cámara desde otro dispositivo en la red local, añadir la IP como origen seguro en Chrome:
+> `chrome://flags/#unsafely-treat-insecure-origin-as-secure`
+
+### Workflow de desarrollo
+
+```
+# Terminal 1 — servidor siempre corriendo
+source venvPerk/bin/activate && uvicorn api.main:app --host 0.0.0.0 --port 8000
+
+# Terminal 2 — app (hot reload activo con 'r', reinicio con 'R')
+cd pillsearch && flutter run
+```
+
+Cambios en `api/main.py` → reiniciar el servidor (Ctrl+C y volver a lanzar).  
+Cambios en `pillsearch/lib/` → Flutter recarga automáticamente con hot reload.
+
+---
+
 **Interfaz con el Kotlin.** Dicen por [aqui](https://discuss.kotlinlang.org/t/integrating-a-python-code-with-kotlin/24639) que se puede meter python en kotlín, en concreto usando una cosa de java, estilo asi ([lee esto de este enlace bien de todas formas](https://www.baeldung.com/java-lang-processbuilder-api)):
 
     Process process = new ProcessBuilder("python", "-m", "src.Ranker", "data/imagenes_alt/012c6e037f099712479ede765f82e3f3.jpeg").start();
