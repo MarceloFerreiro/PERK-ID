@@ -19,9 +19,9 @@ class BoWExtractor:
         
         print(f"[*] Ajustando KMeans con {self.n_clusters} clusters sobre {all_descriptors.shape[0]} descriptores... (el numero de clusters lo cambias en el toml)")
         inicio = time()
-        self.kmeans = KMeans(n_clusters=self.n_clusters, random_state=42, n_init=10, verbose=0)
+        self.kmeans = KMeans(n_clusters=self.n_clusters, init='k-means++', random_state=42, n_init=10, verbose=0)
         self.kmeans.fit(all_descriptors)
-        print(f"[*] Ajustado Kmeans, tardó {time() - inicio:.2f}s.")
+        print(f"[*] Ajustado Kmeans++, tardó {time() - inicio:.2f}s.")
     
     def extract_histogram(self, descriptors: np.ndarray) -> np.ndarray:
         if descriptors.shape[0] == 0:

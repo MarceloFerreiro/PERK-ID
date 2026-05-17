@@ -17,7 +17,7 @@ load_dotenv()
 
 # Config
 TOKEN        = os.getenv('TOKEN') 
-AÑOS         = list(range(2009, 2027))   # rango de años a descargar
+AÑOS         = list(range(2020, 2027))   # rango de años a descargar
 DELAY        = 0.4                        # segundos entre peticiones API
 CARPETA_IMG  = Path("data/imagenes_alt")           # carpeta de salida de imágenes
 CSV_SALIDA   = "data/pastillas_energycontrol.csv"
