@@ -18,7 +18,7 @@ class MaskedAutoencoder(nn.Module):
     - If bounding box is available, also uses bounding box regression loss
     """
     
-    def __init__(self, in_channels: int = 3, latent_dim: int = 128):
+    def __init__(self, in_channels: int = 3, latent_dim: int = 64):
         super().__init__()
         self.in_channels = in_channels
         self.latent_dim = latent_dim
