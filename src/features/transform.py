@@ -6,20 +6,11 @@ import random
 import argparse
 from pathlib import Path
 
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib
-
 from .read_image import read_image
-
-def _load_transform_config():
-    config_path = Path(__file__).parent.parent.parent / "config.toml"
-    with open(config_path, "rb") as f:
-        return tomllib.load(f).get("transform", {})
+from src.utils.config import get_config
 
 def transform(img):
-    cfg = _load_transform_config()
+    cfg = get_config().get("transform", {})
     arr = np.array(img)
     arr_f = arr.astype(np.float32) / 255.0
 

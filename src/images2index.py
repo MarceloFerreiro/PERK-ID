@@ -152,14 +152,8 @@ def main():
     
     # Initialize BoW extractor and fit KMeans
     from src.features.BoW import BoWExtractor
-    try:
-        import tomllib
-    except ImportError:
-        import tomli as tomllib
-    config_path = Path(__file__).parent.parent / "config.toml"
-    with open(config_path, "rb") as f:
-        config = tomllib.load(f)
-    n_clusters = config.get("features", {}).get("bow", {}).get("n_clusters", 100)
+    from src.utils.config import get_config
+    n_clusters = get_config().get("features", {}).get("bow", {}).get("n_clusters", 100)
     
     bow_extractor = BoWExtractor(n_clusters=n_clusters)
     if all_sift_concatenated.shape[0] > 0:

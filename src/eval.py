@@ -1,24 +1,15 @@
 import argparse
 from pathlib import Path
 from time import time
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib
 
 import numpy as np
 from tqdm import tqdm
-
 
 from src.Ranker import Ranker
 from src.features import features, read_image, transform
 from src.features.BoW import BoWExtractor
 from src.utils import cummulative_rank, grid_rank
-
-def load_config():
-    config_path = Path(__file__).parent.parent / "config.toml"
-    with open(config_path, "rb") as f:
-        return tomllib.load(f)
+from src.utils.config import get_config
 
 
 def main() -> int:
@@ -56,8 +47,7 @@ def main() -> int:
 
     bow_extractor=None
     if args.bow.exists():
-        config = load_config()
-        n_clusters = config.get("features", {}).get("bow", {}).get("n_clusters", 100)
+        n_clusters = get_config().get("features", {}).get("bow", {}).get("n_clusters", 100)
         bow_extractor = BoWExtractor.load(args.bow, n_clusters=n_clusters)
 
     ranker = Ranker(matrix, paths, n_neighbors=args.topk, bow_extractor=bow_extractor)

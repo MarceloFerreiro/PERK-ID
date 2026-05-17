@@ -1,14 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
 import sys
 
 import numpy as np
-
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib
 
 from src.features.GLCM import GLCM
 from src.features.HIST import HIST
@@ -18,6 +12,7 @@ from src.features.ORB import ORB
 from src.features.SIFT import SIFT
 from src.features.read_image import read_image
 from src.features.transform import transform
+from src.utils.config import get_config
 
 _FEATURE_REGISTRY = {
     "GLCM": GLCM,
@@ -28,13 +23,8 @@ _FEATURE_REGISTRY = {
     "SIFT": SIFT,
 }
 
-def _load_config():
-    config_path = Path(__file__).parent.parent.parent / "config.toml"
-    with open(config_path, "rb") as f:
-        return tomllib.load(f)
-
 def _get_enabled_features():
-    config = _load_config()
+    config = get_config()
     features_config = config.get("features", {})
     enabled_features = features_config.get("enabled", [])
     
@@ -55,7 +45,7 @@ def _get_enabled_features_excluding(exclude_feature: str):
 
 
 def extract_sift_descriptors(image) -> np.ndarray:
-    config = _load_config()
+    config = get_config()
     sift_params = config.get("features", {}).get("SIFT", {})
     descriptors = SIFT(image, **sift_params)
     return descriptors

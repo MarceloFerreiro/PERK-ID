@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from src.Ranker import Ranker
 from src.features.BoW import BoWExtractor
 from src.features.read_image import read_image
+from src.utils.config import get_config
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -53,13 +54,7 @@ async def lifespan(app: FastAPI):
 
     bow_extractor = None
     if BOW_PATH.exists():
-        try:
-            import tomllib
-        except ImportError:
-            import tomli as tomllib
-        with open("config.toml", "rb") as f:
-            cfg = tomllib.load(f)
-        n_clusters = cfg.get("features", {}).get("bow", {}).get("n_clusters", 100)
+        n_clusters = get_config().get("features", {}).get("bow", {}).get("n_clusters", 100)
         bow_extractor = BoWExtractor.load(BOW_PATH, n_clusters=n_clusters)
 
     state["ranker"] = Ranker(matrix, paths, n_neighbors=MAX_TOPK, bow_extractor=bow_extractor)

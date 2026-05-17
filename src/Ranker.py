@@ -3,22 +3,14 @@ import argparse
 from pathlib import Path
 import numpy as np
 import csv
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib
 
 from src.features import features, read_image, extract_sift_descriptors
 from src.features.BoW import BoWExtractor
-
-def load_config():
-    config_path = Path(__file__).parent.parent / "config.toml"
-    with open(config_path, "rb") as f:
-        return tomllib.load(f)
+from src.utils.config import get_config
 
 class Ranker:
     def __init__(self, features_matrix: np.ndarray, paths: list[str], n_neighbors: int = None, bow_extractor: BoWExtractor = None):
-        config = load_config()
+        config = get_config()
         ranker_config = config.get("ranker", {})
         
         if n_neighbors is None:
@@ -69,8 +61,7 @@ def main() -> int:
     
     bow_extractor=None
     if args.bow.exists():
-        config = load_config()
-        n_clusters = config.get("features", {}).get("bow", {}).get("n_clusters", 100)
+        n_clusters = get_config().get("features", {}).get("bow", {}).get("n_clusters", 100)
         bow_extractor = BoWExtractor.load(args.bow, n_clusters=n_clusters)
     
     ranker = Ranker(matrix, paths, n_neighbors=args.topk, bow_extractor=bow_extractor)
