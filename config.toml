@@ -1,5 +1,5 @@
 [features]
-enabled = ["SIFT"]#, "GLCM", "HU_MOMENTS", "LBP",]
+enabled = ["SIFT", "GLCM", "HU_MOMENTS", "LBP",]
 
 [features.GLCM]
 levels = 32
@@ -23,7 +23,7 @@ bins = 20
 # https://scikit-image.org/docs/stable/api/skimage.feature.html#skimage.feature.SIFT
 n_octaves = 6
 n_bins = 40
-n_hist = 8
+n_hist = 6
 
 [features.ORB]
 # https://scikit-image.org/docs/stable/api/skimage.feature.html#skimage.feature.ORB
@@ -48,7 +48,11 @@ jitter_min = 0.7
 jitter_max = 1.3
 
 [features.bow]
+<<<<<<< HEAD
 n_clusters = 500
+=======
+n_clusters = 250
+>>>>>>> 5ab622b2 (refactor: fastapi main en /src)
 
 [ranker]
 # https://scikit-learn.org/stable/modules/metrics.html

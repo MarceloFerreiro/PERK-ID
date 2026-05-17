@@ -1,7 +1,10 @@
 import argparse
 from pathlib import Path
 from time import time
-import tomllib
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
 
 import numpy as np
 from tqdm import tqdm
