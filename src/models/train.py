@@ -86,12 +86,12 @@ def main():
     print(f"Loading dataset from {args.images_dir}")
     pipeline = TransformPipeline([
     RandomAffineXYWH(
-        rotation_deg=19.0,
-        shear_deg=8.0,
-        scale_min=0.4,
-        scale_max=1.1,
+        rotation_deg=20.0,
+        shear_deg=12.0,
+        scale_min=0.3,
+        scale_max=1.2,
         p=1,
-        min_box_size=2.0,
+        min_box_size=0.0,
         ),
     ])
     dataset = PillsDataset(args.images_dir, args.bbox_csv, transform=pipeline)

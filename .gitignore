@@ -7,6 +7,8 @@
 
 canonicas/
 data/*
+!data/indices/
+!data/indices/f_sn.npz
 !data/icono.jpeg
 !data/docs/
 !data/docs/eval.png
