@@ -8,7 +8,7 @@
 \setbeamertemplate{footline}[frame number]
 
 \usepackage{fontspec}
-\setsansfont{DejaVu Sans}
+\setsansfont{Latin Modern Sans}
 \usepackage[spanish,es-tabla]{babel}
 \usepackage{graphicx}
 \usepackage{booktabs}
@@ -155,21 +155,16 @@
       Imágenes y metadatos de pastillas obtenidos mediante extracción automatizada, procedentes de\\ \href{https://energycontrol.org/}{Energy Control}.
       \end{block}
 
-      \vspace{0.12cm}
+      \vspace{0.1cm}
 
       \begin{itemize}
-        \setlength\itemsep{0.08cm}
+        \setlength\itemsep{0.06cm}
         \item Cada registro corresponde a una pastilla analizada.
         \item Se guardan imágenes cuando están disponibles.
         \item Los metadatos incluyen color, logo, procedencia, peso, diámetro y sustancias.
         \item La información queda estructurada en una tabla junto con las rutas de imagen.
+        \item Antes de compararlas, las imágenes se normalizan: RGB, recorte centrado y tamaño fijo.
       \end{itemize}
-
-      \vspace{0.12cm}
-
-      \begin{block}{Preparación}
-      Las imágenes se normalizan antes de compararlas: RGB, recorte centrado y tamaño fijo.
-      \end{block}
       }
 
     % DERECHA
@@ -178,25 +173,25 @@
 
       \includegraphics[width=\linewidth]{imagenes/transform_grid.png}
 
-      \vspace{0.12cm}
+      \vspace{0.1cm}
 
       {\scriptsize Ejemplos de transformaciones para simular capturas reales.}
 
-      \vspace{0.28cm}
+      \vspace{0.22cm}
 
       \begin{tikzpicture}[
-        node distance=0.34cm,
+        node distance=0.28cm,
         box/.style={
           draw,
           rounded corners=5pt,
           minimum width=4.1cm,
-          minimum height=0.48cm,
+          minimum height=0.42cm,
           align=center,
           font=\scriptsize,
           thick
         },
         arrow/.style={
-          -{Latex[length=2mm]},
+          -{Latex[length=1.8mm]},
           thick,
           perkblue
         }
@@ -297,30 +292,78 @@
 
   \end{columns}
 \end{frame}
+
+
 % 7
-\begin{frame}[fragile]{Descriptores visuales utilizados}
-  \begin{columns}[T,onlytextwidth]
-    \column{0.50\textwidth}
-      \begin{block}{Configuración activa}
-      \begin{lstlisting}
-[features]
-enabled = ["SIFT", "GLCM", "HU_MOMENTS", "LBP"]
+\begin{frame}{Descriptores visuales utilizados}
+  \begin{columns}[c,onlytextwidth]
 
-[features.bow]
-n_clusters = 250
-      \end{lstlisting}
-      \end{block}
-    \column{0.46\textwidth}
+    \column{0.48\textwidth}
+      \centering
+
+      \begin{tikzpicture}[
+        node distance=0.38cm,
+        box/.style={
+          draw,
+          rounded corners=5pt,
+          minimum width=4.2cm,
+          minimum height=0.58cm,
+          align=center,
+          font=\scriptsize,
+          thick
+        },
+        arrow/.style={
+          -{Latex[length=2mm]},
+          thick,
+          perkblue
+        }
+      ]
+
+      \node[box, fill=perkcyan!15, draw=perkcyan] (img) {
+        Imagen normalizada
+      };
+
+      \node[box, fill=perkorange!15, draw=perkorange, below=of img] (sift) {
+        SIFT: puntos locales
+      };
+
+      \node[box, fill=perkorange!10, draw=perkorange, below=of sift] (bow) {
+        BoW: histograma visual
+      };
+
+      \node[box, fill=perkblue!10, draw=perkblue, below=of bow] (classic) {
+        GLCM + Hu Moments + LBP
+      };
+
+      \node[box, fill=perkgreen!15, draw=perkgreen, below=of classic] (vector) {
+        Vector final de características
+      };
+
+      \draw[arrow] (img) -- (sift);
+      \draw[arrow] (sift) -- (bow);
+      \draw[arrow] (bow) -- (classic);
+      \draw[arrow] (classic) -- (vector);
+
+      \end{tikzpicture}
+
+      \vspace{0.25cm}
+
+      {\scriptsize Todos los descriptores se concatenan para representar cada pastilla mediante un vector comparable.}
+
+    \column{0.48\textwidth}
+
       \begin{itemize}
-        \item \textbf{SIFT}: puntos locales, logos, letras y bordes.
-        \item \textbf{BoW}: convierte SIFT variable en vector fijo.
-        \item \textbf{GLCM}: textura global de grises.
-        \item \textbf{Hu Moments}: forma global.
-        \item \textbf{LBP}: microtexturas y patrones locales.
+        \setlength\itemsep{0.18cm}
+        \item \textbf{SIFT}: detecta puntos locales, logos, letras y bordes.
+        \item \textbf{BoW}: convierte los descriptores SIFT en un vector fijo.
+        \item \textbf{GLCM}: describe la textura global en escala de grises.
+        \item \textbf{Hu Moments}: resume la forma global de la pastilla.
+        \item \textbf{LBP}: captura microtexturas y patrones locales.
       \end{itemize}
-  \end{columns}
 
+  \end{columns}
 \end{frame}
+
 
 % 8
 \begin{frame}{Cómo se construye el índice}
@@ -351,111 +394,203 @@ n_clusters = 250
 \end{frame}
 
 % 9
-\begin{frame}[fragile]{Consulta y ranking}
-  \begin{columns}[T,onlytextwidth]
-    \column{0.52\textwidth}
-      \begin{block}{\codefile{src/Ranker.py}}
-      Recibe la imagen de consulta, calcula sus features y busca los vecinos más cercanos en el índice.
-      \end{block}
-      \begin{itemize}
-        \item Métrica configurada: similitud por distancia coseno.
-        \item Motor: \codefile{NearestNeighbors} de scikit-learn.
-        \item Devuelve índices, distancias y rutas de las imágenes más parecidas.
-      \end{itemize}
-    \column{0.42\textwidth}
-      \begin{lstlisting}
-[ranker]
-metric = 'cosine'
-n_neighbors = 10
-      \end{lstlisting}
-      \vspace{0.3cm}
-      \begin{block}{Interpretación}
-      Menor distancia implica mayor similitud visual respecto a la foto de entrada.
-      \end{block}
-  \end{columns}
+\begin{frame}{Consulta y ranking}
+  \begin{columns}[c,onlytextwidth]
 
+    \column{0.54\textwidth}
+      \begin{block}{Funcionamiento}
+      A partir de una imagen de consulta, el sistema extrae sus descriptores visuales y busca en el índice las pastillas más parecidas.
+      \end{block}
+
+      \vspace{0.2cm}
+
+      \begin{itemize}
+        \setlength\itemsep{0.16cm}
+        \item Se calcula un vector de características para la imagen de entrada.
+        \item Ese vector se compara con los vectores del índice visual.
+        \item La búsqueda se realiza mediante vecinos más cercanos.
+        \item Como resultado, se obtiene un ranking ordenado por similitud.
+      \end{itemize}
+
+    \column{0.42\textwidth}
+      \centering
+
+      \begin{tikzpicture}[
+        node distance=0.38cm,
+        box/.style={
+          draw,
+          rounded corners=5pt,
+          minimum width=4.1cm,
+          minimum height=0.58cm,
+          align=center,
+          font=\scriptsize,
+          thick
+        },
+        arrow/.style={
+          -{Latex[length=2mm]},
+          thick,
+          perkblue
+        }
+      ]
+
+      \node[box, fill=perkcyan!15, draw=perkcyan] (query) {Imagen de consulta};
+      \node[box, fill=perkorange!15, draw=perkorange, below=of query] (desc) {Extracción de descriptores};
+      \node[box, fill=perkblue!10, draw=perkblue, below=of desc] (index) {Comparación con el índice};
+      \node[box, fill=perkgreen!15, draw=perkgreen, below=of index] (rank) {Ranking Top-K};
+
+      \draw[arrow] (query) -- (desc);
+      \draw[arrow] (desc) -- (index);
+      \draw[arrow] (index) -- (rank);
+
+      \end{tikzpicture}
+
+      \vspace{0.25cm}
+
+      \begin{block}{Interpretación}
+      Cuanto menor es la distancia, mayor es la similitud visual con la imagen de entrada.
+      \end{block}
+
+  \end{columns}
 \end{frame}
 
 % 10
-\begin{frame}[fragile]{Backend FastAPI}
-  \begin{columns}[T,onlytextwidth]
-    \column{0.50\textwidth}
-      \begin{block}{\codefile{src/main.py}}
-      Carga el índice y expone los endpoints que consume Flutter.
-      \end{block}
-      \begin{table}
-      \centering
-      \scriptsize
-      \begin{tabular}{ll}
-      \toprule
-      Endpoint & Función \\
-      \midrule
-      \codefile{GET /health} & comprobar estado \\
-      \codefile{POST /query} & buscar Top-K \\
-      \codefile{GET /images/...} & servir imágenes \\
-      \codefile{GET /} & servir web compilada \\
-      \bottomrule
-      \end{tabular}
-      \end{table}
-    \column{0.46\textwidth}
-      \begin{lstlisting}
-POST /query?topk=10
-Content-Type: multipart/form-data
-field: image
-      \end{lstlisting}
-      \begin{itemize}
-        \item Respuesta en JSON.
-        \item Incluye metadatos físicos y sustancias.
-        \item Construye URLs para mostrar imágenes en la app.
-      \end{itemize}
-  \end{columns}
+\begin{frame}{Backend FastAPI}
+  \begin{columns}[c,onlytextwidth]
 
+    \column{0.54\textwidth}
+      \begin{block}{Funcionamiento}
+      El backend actúa como intermediario entre la app y el sistema de búsqueda visual: recibe la imagen, consulta el ranking y construye la respuesta final.
+      \end{block}
+
+      \vspace{0.2cm}
+
+      \begin{itemize}
+        \setlength\itemsep{0.16cm}
+        \item Recibe la imagen enviada desde la app mediante una petición \texttt{POST /query}.
+        \item Carga el índice visual y los metadatos necesarios para resolver la consulta.
+        \item Llama al módulo de ranking para obtener las pastillas más similares.
+        \item Devuelve una respuesta estructurada con resultados, metadatos y sustancias asociadas.
+      \end{itemize}
+
+    \column{0.42\textwidth}
+      \centering
+
+      \begin{tikzpicture}[
+        node distance=0.38cm,
+        box/.style={
+          draw,
+          rounded corners=5pt,
+          minimum width=4.1cm,
+          minimum height=0.58cm,
+          align=center,
+          font=\scriptsize,
+          thick
+        },
+        arrow/.style={
+          -{Latex[length=2mm]},
+          thick,
+          perkblue
+        }
+      ]
+
+      \node[box, fill=perkcyan!15, draw=perkcyan] (request) {Petición desde Flutter};
+      \node[box, fill=perkorange!15, draw=perkorange, below=of request] (api) {Procesamiento en FastAPI};
+      \node[box, fill=perkblue!10, draw=perkblue, below=of api] (rank) {Consulta al ranking};
+      \node[box, fill=perkgreen!15, draw=perkgreen, below=of rank] (json) {Respuesta JSON Top-K};
+
+      \draw[arrow] (request) -- (api);
+      \draw[arrow] (api) -- (rank);
+      \draw[arrow] (rank) -- (json);
+
+      \end{tikzpicture}
+
+      \vspace{0.25cm}
+
+      \begin{block}{Respuesta}
+      La app recibe un JSON con las imágenes candidatas, sus distancias de similitud y los metadatos asociados.
+      \end{block}
+
+  \end{columns}
 \end{frame}
 
 % 11
 \begin{frame}{Frontend Flutter}
-  \begin{columns}[T,onlytextwidth]
-    \column{0.48\textwidth}
-      \begin{block}{\codefile{pillsearch/lib/main.dart}}
-      Implementa la interfaz móvil/web: cámara, galería, configuración y resultados.
-      \end{block}
-      \begin{itemize}
-        \item Captura foto con cámara.
-        \item Selecciona imagen de galería.
-        \item Envía multipart al backend.
-        \item Muestra Top-5, Top-10 o Top-20.
-      \end{itemize}
-    \column{0.48\textwidth}
-      \begin{block}{Tecnologías}
-      \begin{itemize}
-        \item Dart como lenguaje de Flutter.
-        \item Paquetes: \codefile{camera}, \codefile{image\_picker}, \codefile{http}, \codefile{shared\_preferences}.
-        \item Android permite HTTP local para pruebas con FastAPI.
-      \end{itemize}
-      \end{block}
-  \end{columns}
+  \begin{columns}[c,onlytextwidth]
 
+    \column{0.52\textwidth}
+
+      \begin{block}{Papel de la app}
+      La app actúa como interfaz entre el usuario y el backend: captura la imagen, lanza la consulta y muestra los resultados.
+      \end{block}
+
+      \vspace{0.25cm}
+
+      \begin{itemize}
+        \setlength\itemsep{0.18cm}
+        \item Permite usar la cámara o seleccionar una imagen de la galería.
+        \item Envía la imagen al backend mediante una petición HTTP.
+        \item Permite elegir cuántos resultados mostrar.
+        \item Presenta el ranking de pastillas similares en tarjetas.
+      \end{itemize}
+
+    \column{0.44\textwidth}
+
+      \begin{block}{Tecnologías utilizadas}
+      \begin{itemize}
+        \setlength\itemsep{0.16cm}
+        \item \textbf{Flutter}: framework para construir la app móvil/web.
+        \item \textbf{Dart}: lenguaje usado por Flutter.
+        \item \textbf{camera}: acceso a la cámara del dispositivo.
+        \item \textbf{image\_picker}: selección de imágenes desde galería.
+        \item \textbf{http}: envío de peticiones al backend.
+        \item \textbf{shared\_preferences}: guardado de configuración local.
+      \end{itemize}
+      \end{block}
+
+  \end{columns}
 \end{frame}
+
 
 % 12
 \begin{frame}{Evaluación del índice}
-  \begin{columns}[T,onlytextwidth]
-    \column{0.47\textwidth}
-      \begin{itemize}
-        \item \codefile{src/eval.py} toma imágenes ya indexadas.
-        \item Les aplica transformaciones artificiales.
-        \item Consulta el índice y mide en qué posición aparece la pastilla original.
-      \end{itemize}
-      \begin{block}{Métricas del README}
-        Top-1: 0.64 \quad Top-10: 0.94 \quad tiempo medio: 0.087 s
-      \end{block}
-    \column{0.49\textwidth}
-      \includegraphics[width=\linewidth]{imagenes/eval.png}
-      \vspace{0.1cm}
-      {\scriptsize Visualización de resultados de evaluación.}
-  \end{columns}
+  \begin{columns}[c,onlytextwidth]
 
+    \column{0.44\textwidth}
+
+      \begin{block}{Objetivo}
+      Evaluar si el índice recupera la pastilla original cuando la consulta es una versión transformada.
+      \end{block}
+
+      \vspace{0.12cm}
+
+      \begin{block}{Proceso}
+      \begin{itemize}
+        \setlength\itemsep{0.03cm}
+        \item Se toman imágenes ya indexadas.
+        \item Se generan consultas transformadas.
+        \item Se compara cada consulta contra el índice.
+        \item Se registra la posición de la imagen original.
+      \end{itemize}
+      \end{block}
+
+      \vspace{0.03cm}
+
+      {\scriptsize
+      \textbf{Métricas:} Top-1, Top-K, ranking medio, distancia media y tiempo de consulta.
+      }
+
+    \column{0.52\textwidth}
+      \centering
+
+      \includegraphics[width=\linewidth]{imagenes/eval.png}
+
+      \vspace{0.12cm}
+
+      {\scriptsize Ejemplo visual: cada fila muestra una consulta transformada y los resultados recuperados por el índice.}
+
+  \end{columns}
 \end{frame}
+
 
 % 13
 \begin{frame}{Módulo experimental: autoencoder y bounding boxes}
