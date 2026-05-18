@@ -19,3 +19,16 @@ __pycache__/
 /venvPerk
 PillIdentifier/app/src/main/assets/pills
 
+presentacion/*.vrb
+presentacion/*.log
+presentacion/*.aux
+presentacion/*.out
+presentacion/*.toc
+presentacion/*.gz
+presentacion/*.zip
+presentacion/*.fls
+presentacion/*.fdb_latexmk
+presentacion/*.synctex.gz
+presentacion/*.snm
+presentacion/*.nav
+
