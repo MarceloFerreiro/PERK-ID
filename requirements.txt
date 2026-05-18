@@ -11,3 +11,4 @@ uniplot
 fastapi[standard]
 uvicorn[standard]
 python-multipart
+opencv-python
