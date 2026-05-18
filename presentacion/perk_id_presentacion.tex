@@ -1,0 +1,474 @@
+
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usetheme{Boadilla}
+\usecolortheme{seahorse}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{caption}[numbered]
+\setbeamertemplate{footline}[frame number]
+
+\usepackage{fontspec}
+\setsansfont{DejaVu Sans}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{hyperref}
+
+\hypersetup{
+  colorlinks=true,
+  urlcolor=perkblue,
+  linkcolor=perkblue
+}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc}
+
+\definecolor{perkblue}{HTML}{2D6CDF}
+\definecolor{perkcyan}{HTML}{19A7CE}
+\definecolor{perkorange}{HTML}{F28C28}
+\definecolor{perkgray}{HTML}{5B6470}
+\definecolor{perkbg}{HTML}{F7F9FC}
+\definecolor{perkgreen}{HTML}{4CAF50}
+
+\setbeamercolor{title}{fg=perkblue}
+\setbeamercolor{frametitle}{fg=perkblue}
+\setbeamercolor{structure}{fg=perkblue}
+\setbeamercolor{block title}{bg=perkblue, fg=white}
+\setbeamercolor{block body}{bg=perkbg, fg=black}
+
+\lstdefinestyle{perkcode}{
+  basicstyle=\ttfamily\scriptsize,
+  backgroundcolor=\color{perkbg},
+  frame=single,
+  rulecolor=\color{perkgray!35},
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true
+}
+\lstset{style=perkcode}
+
+\newcommand{\pill}[1]{\tikz[baseline=(x.base)]\node[rounded corners=3pt, fill=perkblue!10, draw=perkblue!30, inner xsep=5pt, inner ysep=2pt](x){\scriptsize #1};}
+\newcommand{\codefile}[1]{\texttt{#1}}
+
+\title[PERK-ID]{PERK-ID: búsqueda visual de pastillas}
+\author{Bioinformática y Medicina}
+\institute{Grado en Inteligencia Artificial}
+\date{}
+
+\begin{document}
+
+% 1
+\begin{frame}
+  \titlepage
+  \begin{center}
+    \vspace{-0.4cm}
+    %\includegraphics[height=2.0cm]{logo.jpeg}
+  \end{center}
+
+\end{frame}
+
+% 2
+\begin{frame}{Problema que resuelve}
+  \centering
+
+  \vfill
+
+  \begin{columns}[c,onlytextwidth]
+
+    \column{0.50\textwidth}
+      \begin{block}{Objetivo principal}
+      Recuperar, a partir de una foto de entrada, las pastillas del dataset que más se parecen visualmente.
+      \end{block}
+
+      \vspace{0.25cm}
+
+      \begin{itemize}
+        \item Entrada: imagen desde cámara o galería.
+        \item Salida: ranking Top-K con imagen, metadatos y sustancias asociadas.
+        \item Enfoque: recuperación de imágenes por similitud.
+      \end{itemize}
+
+    \column{0.42\textwidth}
+      \centering
+      \begin{tikzpicture}[
+        node distance=0.45cm,
+        box/.style={
+          draw,
+          rounded corners=6pt,
+          minimum width=3.8cm,
+          minimum height=0.78cm,
+          align=center,
+          font=\small,
+          thick
+        },
+        arrow/.style={
+          -{Latex[length=2.5mm]},
+          thick,
+          perkblue
+        }
+      ]
+
+      \node[box, fill=perkcyan!15, draw=perkcyan] (foto) {
+        \textbf{Foto}\\
+        cámara o galería
+      };
+
+      \node[box, fill=perkorange!15, draw=perkorange, below=of foto] (features) {
+        \textbf{Descriptores}\\
+        forma, textura, marcas
+      };
+
+      \node[box, fill=perkgreen!15, draw=perkgreen, below=of features] (busqueda) {
+        \textbf{Búsqueda}\\
+        imágenes similares
+      };
+
+      \node[box, fill=perkblue!10, draw=perkblue, below=of busqueda] (ranking) {
+        \textbf{Resultado}\\
+        Top-K pastillas
+      };
+
+      \draw[arrow] (foto) -- (features);
+      \draw[arrow] (features) -- (busqueda);
+      \draw[arrow] (busqueda) -- (ranking);
+
+      \end{tikzpicture}
+
+  \end{columns}
+
+  \vfill
+\end{frame}
+
+
+
+% 3
+\begin{frame}{Dataset}
+  \begin{columns}[T,onlytextwidth]
+
+    % IZQUIERDA
+    \column{0.46\textwidth}
+
+      {\footnotesize
+      \begin{block}{Datos de partida}
+      Imágenes y metadatos de pastillas obtenidos mediante extracción automatizada, procedentes de\\ \href{https://energycontrol.org/}{Energy Control}.
+      \end{block}
+
+      \vspace{0.12cm}
+
+      \begin{itemize}
+        \setlength\itemsep{0.08cm}
+        \item Cada registro corresponde a una pastilla analizada.
+        \item Se guardan imágenes cuando están disponibles.
+        \item Los metadatos incluyen color, logo, procedencia, peso, diámetro y sustancias.
+        \item La información queda estructurada en una tabla junto con las rutas de imagen.
+      \end{itemize}
+
+      \vspace{0.12cm}
+
+      \begin{block}{Preparación}
+      Las imágenes se normalizan antes de compararlas: RGB, recorte centrado y tamaño fijo.
+      \end{block}
+      }
+
+    % DERECHA
+    \column{0.50\textwidth}
+      \centering
+
+      \includegraphics[width=\linewidth]{imagenes/transform_grid.png}
+
+      \vspace{0.12cm}
+
+      {\scriptsize Ejemplos de transformaciones para simular capturas reales.}
+
+      \vspace{0.28cm}
+
+      \begin{tikzpicture}[
+        node distance=0.34cm,
+        box/.style={
+          draw,
+          rounded corners=5pt,
+          minimum width=4.1cm,
+          minimum height=0.48cm,
+          align=center,
+          font=\scriptsize,
+          thick
+        },
+        arrow/.style={
+          -{Latex[length=2mm]},
+          thick,
+          perkblue
+        }
+      ]
+
+      \node[box, fill=perkcyan!15, draw=perkcyan] (source) {Energy Control};
+      \node[box, fill=perkorange!15, draw=perkorange, below=of source] (extract) {Extracción automatizada};
+      \node[box, fill=perkblue!10, draw=perkblue, below=of extract] (table) {Tabla de metadatos};
+      \node[box, fill=perkgreen!15, draw=perkgreen, below=of table] (images) {Imágenes normalizadas};
+
+      \draw[arrow] (source) -- (extract);
+      \draw[arrow] (extract) -- (table);
+      \draw[arrow] (table) -- (images);
+
+      \end{tikzpicture}
+
+  \end{columns}
+\end{frame}
+
+
+% 4
+
+\begin{frame}{Arquitectura general}
+  \centering
+
+  \vfill
+
+  \includegraphics[width=0.95\linewidth]{imagenes/arquitectura_app.png}
+
+  \vfill
+
+  \pill{Frontend} \hspace{0.4cm}
+  \pill{API} \hspace{0.4cm}
+  \pill{Ranking visual} \hspace{0.4cm}
+  \pill{Datos}
+
+\end{frame}
+
+% 6
+\begin{frame}{Preprocesado}
+  \begin{columns}[c,onlytextwidth]
+
+    \column{0.44\textwidth}
+
+      \begin{block}{Normalización}
+      Todas las imágenes se llevan al mismo formato antes de calcular los descriptores visuales.
+      \end{block}
+
+      \vspace{0.15cm}
+
+      \begin{itemize}
+        \setlength\itemsep{0.18cm}
+        \item Conversión a RGB.
+        \item Recorte centrado.
+        \item Redimensionado a \(256 \times 256\).
+        \item Salida homogénea para comparar imágenes.
+      \end{itemize}
+
+      \vspace{0.2cm}
+
+      {\footnotesize
+      Esto evita que el ranking dependa de diferencias de escala, formato o encuadre.
+      }
+
+    \column{0.52\textwidth}
+      \centering
+
+      \begin{tikzpicture}[
+        node distance=0.50cm,
+        box/.style={
+          draw,
+          rounded corners=5pt,
+          minimum width=4.7cm,
+          minimum height=0.62cm,
+          align=center,
+          font=\small,
+          thick
+        },
+        arrow/.style={
+          -{Latex[length=2mm]},
+          thick,
+          perkblue
+        }
+      ]
+
+      \node[box, fill=perkcyan!15, draw=perkcyan] (input) {Imagen original};
+      \node[box, fill=perkorange!15, draw=perkorange, below=of input] (rgb) {Conversión a RGB};
+      \node[box, fill=perkblue!10, draw=perkblue, below=of rgb] (crop) {Recorte centrado};
+      \node[box, fill=perkgreen!15, draw=perkgreen, below=of crop] (resize) {Resize \(256 \times 256\)};
+      \node[box, fill=perkgray!10, draw=perkgray, below=of resize] (output) {Imagen normalizada};
+
+      \draw[arrow] (input) -- (rgb);
+      \draw[arrow] (rgb) -- (crop);
+      \draw[arrow] (crop) -- (resize);
+      \draw[arrow] (resize) -- (output);
+
+      \end{tikzpicture}
+
+  \end{columns}
+\end{frame}
+% 7
+\begin{frame}[fragile]{Descriptores visuales utilizados}
+  \begin{columns}[T,onlytextwidth]
+    \column{0.50\textwidth}
+      \begin{block}{Configuración activa}
+      \begin{lstlisting}
+[features]
+enabled = ["SIFT", "GLCM", "HU_MOMENTS", "LBP"]
+
+[features.bow]
+n_clusters = 250
+      \end{lstlisting}
+      \end{block}
+    \column{0.46\textwidth}
+      \begin{itemize}
+        \item \textbf{SIFT}: puntos locales, logos, letras y bordes.
+        \item \textbf{BoW}: convierte SIFT variable en vector fijo.
+        \item \textbf{GLCM}: textura global de grises.
+        \item \textbf{Hu Moments}: forma global.
+        \item \textbf{LBP}: microtexturas y patrones locales.
+      \end{itemize}
+  \end{columns}
+
+\end{frame}
+
+% 8
+\begin{frame}{Cómo se construye el índice}
+  \begin{columns}[T,onlytextwidth]
+    \column{0.48\textwidth}
+      \begin{enumerate}
+        \item Leer cada imagen del dataset.
+        \item Extraer GLCM, Hu Moments y LBP.
+        \item Extraer descriptores SIFT.
+        \item Entrenar KMeans para Bag of Words.
+        \item Concatenar todo en un vector final.
+        \item Guardar matriz de features e imágenes asociadas.
+      \end{enumerate}
+    \column{0.48\textwidth}
+      \begin{tikzpicture}[node distance=0.45cm]
+        \node[draw, rounded corners, fill=perkcyan!15, minimum width=4.8cm, minimum height=0.7cm] (img) {Imagen};
+        \node[draw, rounded corners, fill=perkblue!10, below=of img, minimum width=4.8cm, minimum height=0.7cm] (desc) {Descriptores clásicos};
+        \node[draw, rounded corners, fill=perkorange!15, below=of desc, minimum width=4.8cm, minimum height=0.7cm] (sift) {SIFT → BoW};
+        \node[draw, rounded corners, fill=perkgreen!15, below=of sift, minimum width=4.8cm, minimum height=0.7cm] (vec) {Vector final};
+        \node[draw, rounded corners, fill=perkgray!10, below=of vec, minimum width=4.8cm, minimum height=0.7cm] (npz) {\codefile{features.npz}};
+        \draw[-{Latex[length=3mm]}, thick] (img) -- (desc);
+        \draw[-{Latex[length=3mm]}, thick] (desc) -- (sift);
+        \draw[-{Latex[length=3mm]}, thick] (sift) -- (vec);
+        \draw[-{Latex[length=3mm]}, thick] (vec) -- (npz);
+      \end{tikzpicture}
+  \end{columns}
+
+\end{frame}
+
+% 9
+\begin{frame}[fragile]{Consulta y ranking}
+  \begin{columns}[T,onlytextwidth]
+    \column{0.52\textwidth}
+      \begin{block}{\codefile{src/Ranker.py}}
+      Recibe la imagen de consulta, calcula sus features y busca los vecinos más cercanos en el índice.
+      \end{block}
+      \begin{itemize}
+        \item Métrica configurada: similitud por distancia coseno.
+        \item Motor: \codefile{NearestNeighbors} de scikit-learn.
+        \item Devuelve índices, distancias y rutas de las imágenes más parecidas.
+      \end{itemize}
+    \column{0.42\textwidth}
+      \begin{lstlisting}
+[ranker]
+metric = 'cosine'
+n_neighbors = 10
+      \end{lstlisting}
+      \vspace{0.3cm}
+      \begin{block}{Interpretación}
+      Menor distancia implica mayor similitud visual respecto a la foto de entrada.
+      \end{block}
+  \end{columns}
+
+\end{frame}
+
+% 10
+\begin{frame}[fragile]{Backend FastAPI}
+  \begin{columns}[T,onlytextwidth]
+    \column{0.50\textwidth}
+      \begin{block}{\codefile{src/main.py}}
+      Carga el índice y expone los endpoints que consume Flutter.
+      \end{block}
+      \begin{table}
+      \centering
+      \scriptsize
+      \begin{tabular}{ll}
+      \toprule
+      Endpoint & Función \\
+      \midrule
+      \codefile{GET /health} & comprobar estado \\
+      \codefile{POST /query} & buscar Top-K \\
+      \codefile{GET /images/...} & servir imágenes \\
+      \codefile{GET /} & servir web compilada \\
+      \bottomrule
+      \end{tabular}
+      \end{table}
+    \column{0.46\textwidth}
+      \begin{lstlisting}
+POST /query?topk=10
+Content-Type: multipart/form-data
+field: image
+      \end{lstlisting}
+      \begin{itemize}
+        \item Respuesta en JSON.
+        \item Incluye metadatos físicos y sustancias.
+        \item Construye URLs para mostrar imágenes en la app.
+      \end{itemize}
+  \end{columns}
+
+\end{frame}
+
+% 11
+\begin{frame}{Frontend Flutter}
+  \begin{columns}[T,onlytextwidth]
+    \column{0.48\textwidth}
+      \begin{block}{\codefile{pillsearch/lib/main.dart}}
+      Implementa la interfaz móvil/web: cámara, galería, configuración y resultados.
+      \end{block}
+      \begin{itemize}
+        \item Captura foto con cámara.
+        \item Selecciona imagen de galería.
+        \item Envía multipart al backend.
+        \item Muestra Top-5, Top-10 o Top-20.
+      \end{itemize}
+    \column{0.48\textwidth}
+      \begin{block}{Tecnologías}
+      \begin{itemize}
+        \item Dart como lenguaje de Flutter.
+        \item Paquetes: \codefile{camera}, \codefile{image\_picker}, \codefile{http}, \codefile{shared\_preferences}.
+        \item Android permite HTTP local para pruebas con FastAPI.
+      \end{itemize}
+      \end{block}
+  \end{columns}
+
+\end{frame}
+
+% 12
+\begin{frame}{Evaluación del índice}
+  \begin{columns}[T,onlytextwidth]
+    \column{0.47\textwidth}
+      \begin{itemize}
+        \item \codefile{src/eval.py} toma imágenes ya indexadas.
+        \item Les aplica transformaciones artificiales.
+        \item Consulta el índice y mide en qué posición aparece la pastilla original.
+      \end{itemize}
+      \begin{block}{Métricas del README}
+        Top-1: 0.64 \quad Top-10: 0.94 \quad tiempo medio: 0.087 s
+      \end{block}
+    \column{0.49\textwidth}
+      \includegraphics[width=\linewidth]{imagenes/eval.png}
+      \vspace{0.1cm}
+      {\scriptsize Visualización de resultados de evaluación.}
+  \end{columns}
+
+\end{frame}
+
+% 13
+\begin{frame}{Módulo experimental: autoencoder y bounding boxes}
+
+\end{frame}
+
+% 14
+\begin{frame}{TRabajo futuro}
+
+\end{frame}
+
+% 15
+\begin{frame}{Cierre}
+\end{frame}
+
+\end{document}
