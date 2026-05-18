@@ -52,21 +52,42 @@
 \newcommand{\pill}[1]{\tikz[baseline=(x.base)]\node[rounded corners=3pt, fill=perkblue!10, draw=perkblue!30, inner xsep=5pt, inner ysep=2pt](x){\scriptsize #1};}
 \newcommand{\codefile}[1]{\texttt{#1}}
 
-\title[PERK-ID]{PERK-ID: búsqueda visual de pastillas}
-\author{Bioinformática y Medicina}
+\title[PERK-ID]{\protect\centering PERK-ID: búsqueda visual de pastillas}
+\author{Laura Cabaleiro, Marcelo Ferreiro, José Romero}
 \institute{Grado en Inteligencia Artificial}
 \date{}
 
 \begin{document}
 
 % 1
-\begin{frame}
-  \titlepage
-  \begin{center}
-    \vspace{-0.4cm}
-    %\includegraphics[height=2.0cm]{logo.jpeg}
-  \end{center}
+\begin{frame}[plain]
+  \centering
+  \vfill
 
+  \hspace*{-0.02\paperwidth}
+  \begin{beamercolorbox}[
+    wd=0.80\paperwidth,
+    sep=1em,
+    center,
+    rounded=true,
+    shadow=true
+  ]{title}
+    {\LARGE PERK-ID: búsqueda visual de pastillas}
+  \end{beamercolorbox}
+
+  \vspace{0.65cm}
+
+  {\Large Bioinformática y Medicina}
+
+  \vspace{0.35cm}
+
+  {\normalsize Laura Cabaleiro, Marcelo Ferreiro, José Romero}
+
+  \vspace{0.20cm}
+
+  {\normalsize Grado en Inteligencia Artificial}
+
+  \vfill
 \end{frame}
 
 % 2
@@ -591,19 +612,106 @@
   \end{columns}
 \end{frame}
 
+%resultados
+\begin{frame}{Resultados}
+
+\end{frame}
+
 
 % 13
-\begin{frame}{Módulo experimental: autoencoder y bounding boxes}
+\begin{frame}{Autoencoder y Bounding Box: módulo experimental}
+  \begin{columns}[c,onlytextwidth]
 
+    \column{0.42\textwidth}
+      {\footnotesize
+
+      \begin{block}{Idea principal}
+      Reconstruir imágenes de pastillas y predecir su localización mediante bounding boxes.
+      \end{block}
+
+      \vspace{0.12cm}
+
+      \begin{itemize}
+        \setlength\itemsep{0.06cm}
+        \item El \textbf{encoder} comprime la imagen en una representación latente.
+        \item El \textbf{decoder} reconstruye la imagen de entrada.
+        \item Una cabeza adicional predice la caja: \(x, y, w, h\).
+        \item El modelo aprende a reconstruir la imagen y a localizar la pastilla a la vez.
+      \end{itemize}
+
+      \vspace{0.12cm}
+
+      }
+
+    \column{0.54\textwidth}
+      \centering
+
+      \includegraphics[width=\linewidth]{imagenes/reconstruccion.png}
+
+      \vspace{0.10cm}
+
+      {\scriptsize Ejemplos de reconstrucción y predicción de bounding boxes.}
+
+  \end{columns}
 \end{frame}
 
 % 14
-\begin{frame}{TRabajo futuro}
+\begin{frame}{Trabajo futuro}
+  \begin{columns}[c,onlytextwidth]
 
+    \column{0.52\textwidth}
+
+      \begin{block}{Uso de una CNN}
+      Como mejora futura, se podría sustituir o complementar el sistema actual de descriptores manuales por una red convolucional entrenada sobre las imágenes de pastillas.
+      \end{block}
+
+      \vspace{0.2cm}
+
+      \begin{itemize}
+        \setlength\itemsep{0.14cm}
+        \item La CNN aprendería automáticamente patrones visuales relevantes como
+         forma, color, textura, logos y marcas, sin definir cada descriptor a mano.
+      \end{itemize}
+
+    \column{0.44\textwidth}
+
+      \begin{block}{Ventajas esperadas}
+      \begin{itemize}
+        \setlength\itemsep{0.14cm}
+        \item Representaciones más adaptadas al dataset.
+        \item Mayor robustez ante cambios de iluminación, escala o perspectiva.
+        \item Es un sistema más escalable si aumenta el número de muestras.
+      \end{itemize}
+      \end{block}
+
+      \vspace{0.15cm}
+
+      {\scriptsize
+      La idea sería mantener el enfoque de recuperación visual, pero usando embeddings aprendidos por la CNN en lugar de depender solo de las features implementadas.
+      }
+
+  \end{columns}
 \end{frame}
 
 % 15
-\begin{frame}{Cierre}
+\begin{frame}{Conclusiones}
+
+  -Es recuperación con visión clásica, no es deep learnign (menos por el módulo experimental).
+  -Se han obtenido resultados que \dots
+  -Se ha probado que ...
+
+\end{frame}
+
+% 16
+\begin{frame}{\phantom{Cierre}}
+  \centering
+  \vfill
+
+  \begin{center}
+  {\Huge \textbf{Muchas gracias por la atención}}
+  \end{center}
+
+  \vfill
 \end{frame}
 
 \end{document}

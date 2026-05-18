@@ -12,6 +12,7 @@ data/*
 !data/docs/eval.png
 !data/docs/reconstruccion.png
 !data/docs/transform_grid.png
+!presentacion/imagenes/*
 __pycache__/
 
 /imagenes
