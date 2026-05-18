@@ -19,11 +19,17 @@ def _to_uint8(image: np.ndarray) -> np.ndarray:
     return image
 
 
-def read_image(path: Path, target_size: int = 256) -> np.ndarray | None:
+def read_image(
+    source: Path | str | np.ndarray,
+    target_size: int = 256,
+    return_meta: bool = False,
+) -> np.ndarray | None | tuple[np.ndarray | None, dict | None]:
     ImageFile.LOAD_TRUNCATED_IMAGES = True
     try:
-        image = io.imread(str(path))
-        image = np.asarray(image)
+        if isinstance(source, (str, Path)):
+            image = io.imread(str(source))
+        else:
+            image = np.asarray(source)
 
         if image.ndim == 3:
             channels = image.shape[2]
@@ -41,7 +47,8 @@ def read_image(path: Path, target_size: int = 256) -> np.ndarray | None:
             image = np.stack([image] * 3, axis=2)
 
         h, w = image.shape[:2]
-        if h == 0 or w == 0: return None
+        if h == 0 or w == 0:
+            return (None, None) if return_meta else None
 
         # recorta conservando el aspect ratio a 256
         scale = target_size / min(h, w)
@@ -60,6 +67,18 @@ def read_image(path: Path, target_size: int = 256) -> np.ndarray | None:
         crop_y = (new_h - target_size) // 2
         crop_x = (new_w - target_size) // 2
         image = image[crop_y:crop_y + target_size, crop_x:crop_x + target_size]
+        if return_meta:
+            meta = {
+                "frame_h": h,
+                "frame_w": w,
+                "new_h": new_h,
+                "new_w": new_w,
+                "crop_x": crop_x,
+                "crop_y": crop_y,
+                "scale_x": new_w / w,
+                "scale_y": new_h / h,
+            }
+            return image, meta
         return image
     except (OSError, ValueError, RuntimeError):
-        return None
+        return (None, None) if return_meta else None

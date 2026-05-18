@@ -1,4 +1,5 @@
 from pathlib import Path
+from collections.abc import Callable
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
@@ -10,15 +11,22 @@ from src.features.read_image import read_image
 class PillsDataset(Dataset):
     """PyTorch Dataset for pill images with optional bounding box annotations."""
     
-    def __init__(self, images_dir: Path | str, bounding_box_csv: Path | str | None = None):
+    def __init__(
+        self,
+        images_dir: Path | str,
+        bounding_box_csv: Path | str | None = None,
+        transform: Callable[[np.ndarray, np.ndarray | None], tuple[np.ndarray, np.ndarray | None]] | None = None,
+    ):
         """
         Args:
             images_dir: Directory containing pill images (.jpg, .jpeg)
             bounding_box_csv: Path to CSV with columns [name, x, y, width, height]
                              where 'name' is the image filename (without extension)
+            transform: Callable that accepts (image, bbox_xywh) and returns (image, bbox_xywh)
         """
         self.images_dir = Path(images_dir)
         self.image_paths = sorted(self.images_dir.glob("*.jp*g"))
+        self.transform = transform
         
         # Load bounding box data if provided
         self.bbox_data = {}
@@ -53,22 +61,29 @@ class PillsDataset(Dataset):
         if image is None:
             raise ValueError(f"Could not read image: {image_path}")
         
+        # Check if this image has bounding box data
+        image_name = image_path.stem  # filename without extension
+        bbox_array: np.ndarray | None = None
+        if image_name in self.bbox_data:
+            bbox = self.bbox_data[image_name]
+            bbox_array = np.array(
+                [bbox['x'], bbox['y'], bbox['width'], bbox['height']],
+                dtype=np.float32,
+            )
+
+        if self.transform is not None:
+            image, bbox_array = self.transform(image, bbox_array)
+
         # Convert to tensor (C, H, W) format
         # image is already (H, W, 3) from read_image
         image_tensor = torch.from_numpy(image).float() / 255.0
         image_tensor = image_tensor.permute(2, 0, 1)  # HWC -> CHW
-        
-        # Check if this image has bounding box data
-        image_name = image_path.stem  # filename without extension
-        if image_name in self.bbox_data:
-            bbox = self.bbox_data[image_name]
-            bbox_tensor = torch.tensor(
-                [bbox['x'], bbox['y'], bbox['width'], bbox['height']],
-                dtype=torch.float32
-            )
+
+        if bbox_array is not None:
+            bbox_tensor = torch.from_numpy(bbox_array).float()
             return image_tensor, bbox_tensor
-        else:
-            return image_tensor, None
+
+        return image_tensor, None
 
 
 def custom_collate_fn(batch):

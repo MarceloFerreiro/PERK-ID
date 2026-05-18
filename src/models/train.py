@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 from src.models.PillsDataset import PillsDataset, custom_collate_fn
 from src.models.net import MaskedAutoencoder, compute_loss
+from src.features.transform import TransformPipeline, RandomAffineXYWH
 
 
 def train_epoch(
@@ -83,7 +84,17 @@ def main():
     
     # Create dataset and dataloader
     print(f"Loading dataset from {args.images_dir}")
-    dataset = PillsDataset(args.images_dir, args.bbox_csv)
+    pipeline = TransformPipeline([
+    RandomAffineXYWH(
+        rotation_deg=19.0,
+        shear_deg=8.0,
+        scale_min=0.4,
+        scale_max=1.1,
+        p=1,
+        min_box_size=2.0,
+        ),
+    ])
+    dataset = PillsDataset(args.images_dir, args.bbox_csv, transform=pipeline)
     train_loader = DataLoader(
         dataset,
         batch_size=args.batch_size,
@@ -92,7 +103,7 @@ def main():
         pin_memory=device.type == "cuda",
         collate_fn=custom_collate_fn,
     )
-    print(f"Número de imágenes a proceser: {len(dataset)}")
+    print(f"Número de imágenes a procesar: {len(dataset)}")
     
     model = MaskedAutoencoder(in_channels=3, latent_dim=args.latent_dim).to(device)
     print(f"#parametros: {sum(p.numel() for p in model.parameters()):,}")

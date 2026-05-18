@@ -5,6 +5,7 @@ import numpy as np
 import random
 import argparse
 from pathlib import Path
+from collections.abc import Callable
 
 from .read_image import read_image
 from src.utils.config import get_config
@@ -56,6 +57,128 @@ def transform(img):
         img = ImageEnhance.Contrast(img).enhance(  random.uniform(jmin, jmax))
         img = ImageEnhance.Color(img).enhance(     random.uniform(jmin, jmax))
     return np.array(img)
+
+
+class TransformPipeline:
+    def __init__(
+        self,
+        transforms: list[Callable[[np.ndarray, np.ndarray | None], tuple[np.ndarray, np.ndarray | None]]],
+    ) -> None:
+        self.transforms = list(transforms)
+
+    def __call__(
+        self,
+        image: np.ndarray,
+        bbox: np.ndarray | None,
+    ) -> tuple[np.ndarray, np.ndarray | None]:
+        for transform_fn in self.transforms:
+            image, bbox = transform_fn(image, bbox)
+        return image, bbox
+
+
+class RandomAffineXYWH:
+    def __init__(
+        self,
+        rotation_deg: float = 10.0,
+        shear_deg: float = 5.0,
+        scale_min: float = 0.9,
+        scale_max: float = 1.1,
+        p: float = 1.0,
+        min_box_size: float = 1.0,
+        mode: str = "edge",
+        order: int = 1,
+    ) -> None:
+        if scale_min <= 0 or scale_max <= 0 or scale_max < scale_min:
+            raise ValueError("Invalid scale range")
+
+        self.rotation_deg = float(rotation_deg)
+        self.shear_deg = float(shear_deg)
+        self.scale_min = float(scale_min)
+        self.scale_max = float(scale_max)
+        self.p = float(p)
+        self.min_box_size = float(min_box_size)
+        self.mode = mode
+        self.order = int(order)
+
+    def _sample_transform(self, image_shape: tuple[int, int]) -> AffineTransform:
+        h, w = image_shape
+        scale_x = random.uniform(self.scale_min, self.scale_max)
+        scale_y = random.uniform(self.scale_min, self.scale_max)
+        rotation = random.uniform(-self.rotation_deg, self.rotation_deg) * np.pi / 180.0
+        shear = random.uniform(-self.shear_deg, self.shear_deg) * np.pi / 180.0
+        max_tx = max(0.0, 1.0 - scale_x) * float(w)
+        max_ty = max(0.0, 1.0 - scale_y) * float(h)
+        trans_x = random.uniform(-max_tx, max_tx)
+        trans_y = random.uniform(-max_ty, max_ty)
+        return AffineTransform(
+            scale=(scale_x, scale_y),
+            rotation=rotation,
+            shear=shear,
+            translation=(trans_x, trans_y),
+        )
+
+    def _warp_image(self, image: np.ndarray, tform: AffineTransform) -> np.ndarray:
+        image_f = image.astype(np.float32, copy=False)
+        warped = warp(
+            image_f,
+            inverse_map=tform.inverse,
+            mode=self.mode,
+            order=self.order,
+            preserve_range=True,
+        )
+        if image.dtype == np.uint8:
+            return np.clip(warped, 0, 255).astype(np.uint8)
+        return warped.astype(image.dtype, copy=False)
+
+    def __call__(
+        self,
+        image: np.ndarray,
+        bbox: np.ndarray | None,
+    ) -> tuple[np.ndarray, np.ndarray | None]:
+        if self.p < 1.0 and random.random() > self.p:
+            return image, bbox
+
+        h, w = image.shape[:2]
+        tform = self._sample_transform((h, w))
+        image_out = self._warp_image(image, tform)
+
+        if bbox is None:
+            return image_out, None
+
+        bbox_arr = np.asarray(bbox, dtype=np.float32)
+        if bbox_arr.shape[-1] != 4:
+            raise ValueError("bbox must be [x, y, width, height]")
+
+        x, y, bw, bh = bbox_arr.tolist()
+        corners = np.array(
+            [
+                [x, y],
+                [x + bw, y],
+                [x + bw, y + bh],
+                [x, y + bh],
+            ],
+            dtype=np.float32,
+        )
+
+        # Apply the same forward transform used for the image.
+        warped_corners = tform(corners)
+        x_min = float(np.min(warped_corners[:, 0]))
+        y_min = float(np.min(warped_corners[:, 1]))
+        x_max = float(np.max(warped_corners[:, 0]))
+        y_max = float(np.max(warped_corners[:, 1]))
+
+        x_min = float(np.clip(x_min, 0.0, w - 1.0))
+        y_min = float(np.clip(y_min, 0.0, h - 1.0))
+        x_max = float(np.clip(x_max, 0.0, w - 1.0))
+        y_max = float(np.clip(y_max, 0.0, h - 1.0))
+
+        new_w = x_max - x_min
+        new_h = y_max - y_min
+        if new_w < self.min_box_size or new_h < self.min_box_size:
+            return image_out, None
+
+        new_bbox = np.array([x_min, y_min, new_w, new_h], dtype=np.float32)
+        return image_out, new_bbox
 
 
 def _load_random_images(image_dir: Path, count: int, seed: int = 42) -> list[Image.Image]:
