@@ -9,6 +9,7 @@ canonicas/
 data/*
 !data/indices/
 !data/indices/f_sn.npz
+!data/indices/bow.pkl
 !data/icono.jpeg
 !data/docs/
 !data/docs/eval.png
