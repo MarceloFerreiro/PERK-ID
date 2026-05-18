@@ -275,36 +275,17 @@
     \column{0.52\textwidth}
       \centering
 
-      \begin{tikzpicture}[
-        node distance=0.50cm,
-        box/.style={
-          draw,
-          rounded corners=5pt,
-          minimum width=4.7cm,
-          minimum height=0.62cm,
-          align=center,
-          font=\small,
-          thick
-        },
-        arrow/.style={
-          -{Latex[length=2mm]},
-          thick,
-          perkblue
-        }
-      ]
+      \begin{tabular}{c@{\hspace{0.25cm}}c}
+        \textbf{Original} & \textbf{Preprocesada} \\[0.15cm]
+        \includegraphics[height=2.45cm]{imagenes/preprocesado/original.jpeg} &
+        \includegraphics[height=2.45cm]{imagenes/preprocesado/preprocesada.jpeg}
+      \end{tabular}
 
-      \node[box, fill=perkcyan!15, draw=perkcyan] (input) {Imagen original};
-      \node[box, fill=perkorange!15, draw=perkorange, below=of input] (rgb) {Conversión a RGB};
-      \node[box, fill=perkblue!10, draw=perkblue, below=of rgb] (crop) {Recorte centrado};
-      \node[box, fill=perkgreen!15, draw=perkgreen, below=of crop] (resize) {Resize \(256 \times 256\)};
-      \node[box, fill=perkgray!10, draw=perkgray, below=of resize] (output) {Imagen normalizada};
+      \vspace{0.25cm}
 
-      \draw[arrow] (input) -- (rgb);
-      \draw[arrow] (rgb) -- (crop);
-      \draw[arrow] (crop) -- (resize);
-      \draw[arrow] (resize) -- (output);
-
-      \end{tikzpicture}
+      {\scriptsize
+      La imagen original se convierte a RGB, se recorta de forma centrada y se redimensiona a \(256 \times 256\).
+      }
 
   \end{columns}
 \end{frame}
@@ -312,72 +293,110 @@
 
 % 7
 \begin{frame}{Descriptores visuales utilizados}
-  \begin{columns}[c,onlytextwidth]
+\begin{columns}[T,onlytextwidth]
 
-    \column{0.48\textwidth}
-      \centering
+  %---------------- IZQUIERDA ----------------%
+  \column{0.48\textwidth}
+  \vspace{0pt}
+  \centering
 
-      \begin{tikzpicture}[
-        node distance=0.38cm,
-        box/.style={
-          draw,
-          rounded corners=5pt,
-          minimum width=4.2cm,
-          minimum height=0.58cm,
-          align=center,
-          font=\scriptsize,
-          thick
-        },
-        arrow/.style={
-          -{Latex[length=2mm]},
-          thick,
-          perkblue
-        }
-      ]
+  \resizebox{0.93\linewidth}{!}{%
+  \begin{tikzpicture}[
+    x=1cm,y=1cm,
+    >=Latex,
+    thick,
+    box/.style={
+      draw,
+      rounded corners=5pt,
+      minimum height=0.62cm,
+      align=center,
+      font=\scriptsize,
+      thick
+    },
+    topbox/.style={
+      box,
+      minimum width=3.4cm,
+      fill=perkcyan!15,
+      draw=perkcyan
+    },
+    leftbox/.style={
+      box,
+      minimum width=2.5cm,
+      fill=perkorange!10,
+      draw=perkorange
+    },
+    rightbox/.style={
+      box,
+      minimum width=3.2cm,
+      fill=perkblue!10,
+      draw=perkblue
+    },
+    finalbox/.style={
+      box,
+      minimum width=3.3cm,
+      fill=perkgreen!15,
+      draw=perkgreen
+    },
+    arrow/.style={
+      -{Latex[length=2mm]},
+      thick,
+      perkblue,
+      shorten >=1.2pt,
+      shorten <=1.2pt
+    }
+  ]
 
-      \node[box, fill=perkcyan!15, draw=perkcyan] (img) {
-        Imagen normalizada
-      };
+    % Nodos
+    \node[topbox]   (img)      at (0,3.10) {Imagen normalizada};
 
-      \node[box, fill=perkorange!15, draw=perkorange, below=of img] (sift) {
-        SIFT: puntos locales
-      };
+    \node[leftbox]  (sift)     at (-2.45,2.00) {SIFT};
+    \node[leftbox]  (bow)      at (-2.45,1.05) {BoW};
 
-      \node[box, fill=perkorange!10, draw=perkorange, below=of sift] (bow) {
-        BoW: histograma visual
-      };
+    \node[rightbox] (clasicos) at ( 2.45,2.00) {GLCM + Hu + LBP};
 
-      \node[box, fill=perkblue!10, draw=perkblue, below=of bow] (classic) {
-        GLCM + Hu Moments + LBP
-      };
+    % Vector un poco más abajo
+    \node[finalbox] (vector)   at (0,-0.30) {Vector final};
 
-      \node[box, fill=perkgreen!15, draw=perkgreen, below=of classic] (vector) {
-        Vector final de características
-      };
+    % Puntos de entrada al vector
+    \coordinate (vinL) at ($(vector.north west)!0.28!(vector.north east)$);
+    \coordinate (vinR) at ($(vector.north west)!0.72!(vector.north east)$);
 
-      \draw[arrow] (img) -- (sift);
-      \draw[arrow] (sift) -- (bow);
-      \draw[arrow] (bow) -- (classic);
-      \draw[arrow] (classic) -- (vector);
+    % Flechas superiores
+    \draw[arrow] (img.south west) -- (sift.north);
+    \draw[arrow] (img.south east) -- (clasicos.north);
 
-      \end{tikzpicture}
+    % Rama izquierda
+    \draw[arrow] (sift.south) -- (bow.north);
+    \draw[arrow] (bow.south) -- ++(0,-0.28) -| (vinL);
 
-      \vspace{0.25cm}
+    % Rama derecha
+    \draw[arrow] (clasicos.south) -- ++(0,-0.55) -| (vinR);
 
-      {\scriptsize Todos los descriptores se concatenan para representar cada pastilla mediante un vector comparable.}
+  \end{tikzpicture}
+  }
 
-    \column{0.48\textwidth}
+  \vspace{0.08cm}
 
-      \begin{itemize}
-        \setlength\itemsep{0.18cm}
-        \item \textbf{SIFT}: detecta puntos locales, logos, letras y bordes.
-        \item \textbf{BoW}: convierte los descriptores SIFT en un vector fijo.
-        \item \textbf{GLCM}: describe la textura global en escala de grises.
-        \item \textbf{Hu Moments}: resume la forma global de la pastilla.
-        \item \textbf{LBP}: captura microtexturas y patrones locales.
-      \end{itemize}
+  {\scriptsize
+  SIFT se transforma en BoW y se concatena con los descriptores clásicos.
+  }
 
-  \end{columns}
+  %---------------- DERECHA ----------------%
+  \column{0.50\textwidth}
+  \vspace{0pt}
+
+  {\footnotesize
+  \begin{itemize}
+    \setlength\itemsep{0.10cm}
+    \item \textbf{SIFT}: detecta puntos locales, logos, letras y bordes.
+    \item \textbf{BoW}: convierte los descriptores SIFT en un vector fijo.
+    \item \textbf{GLCM}: describe la textura global en escala de grises.
+    \item \textbf{Hu Moments}: resume la forma global de la pastilla.
+    \item \textbf{LBP}: captura microtexturas y patrones locales.
+  \end{itemize}
+  }
+
+\end{columns}
 \end{frame}
 
 
