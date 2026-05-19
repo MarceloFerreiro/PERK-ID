@@ -1,5 +1,7 @@
 # PERK-ID
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20283898.svg)](https://doi.org/10.5281/zenodo.20283898)
+
 Proyecto de la asignatura Bioinformática y Medicina del Grado en Inteligencia Artificial de la Universidade da Coruña.
 ![vaites, ocurreu un erro ca imaxe](https://github.com/MarceloFerreiro/PERK-ID/blob/main/data/icono.jpeg?raw=true)
 
