@@ -1,5 +1,6 @@
 # PERK-ID
 
+Proyecto de la asignatura Bioinformática y Medicina del Grado en Inteligencia Artificial de la Universidade da Coruña.
 ![vaites, ocurreu un erro ca imaxe](https://github.com/MarceloFerreiro/PERK-ID/blob/main/data/icono.jpeg?raw=true)
 
 <details> 
@@ -266,46 +267,3 @@ Cambios en `api/main.py` → reiniciar el servidor (Ctrl+C y volver a lanzar).
 Cambios en `pillsearch/lib/` → Flutter recarga automáticamente con hot reload.
 
 ---
-
-**Interfaz con el Kotlin.** Dicen por [aqui](https://discuss.kotlinlang.org/t/integrating-a-python-code-with-kotlin/24639) que se puede meter python en kotlín, en concreto usando una cosa de java, estilo asi ([lee esto de este enlace bien de todas formas](https://www.baeldung.com/java-lang-processbuilder-api)):
-
-    Process process = new ProcessBuilder("python", "-m", "src.Ranker", "data/imagenes_alt/012c6e037f099712479ede765f82e3f3.jpeg").start();
-
-
-Desconozco el tema la verdad, en cualquier caso la _API_ es esta:
-
-    (venv) python -m src.Ranker -h
-    usage: python -m src.Ranker [-h] [--features FEATURES] [--output_dir OUTPUT_DIR] [--images-dir IMAGES_DIR] [--topk TOPK] image_path
-    
-    Ranking
-    
-    positional arguments:
-      image_path
-    
-    options:
-      -h, --help            show this help message and exit
-      --features FEATURES   Ruta al índice .npz
-      --output_dir OUTPUT_DIR
-                            directorio donde se guardan los resultados.
-      --images-dir IMAGES_DIR
-                            Directorio con imagenes
-      --topk TOPK           K para Top-K accuracy
-
-El k es cuantas imagenes te devuelve así yo diria de devolver flow 100 o así y que se pueda deslizar o que haya lo típico de _ver 10 pastillas más_.
-
-En cualquier caso ese programa escribre un csv con:
-
-    cat results/012c6e037f099712479ede765f82e3f3.csv
-
-    Path,Distance
-    data/imagenes_alt/012c6e037f099712479ede765f82e3f3.jpeg,0.0
-    data/imagenes_alt/802c610734641e0a2722164eb0047124.jpeg,51.75687026977539
-    data/imagenes_alt/48b982d8e992e0ba05e3828f0a24a430.jpeg,52.08281707763672
-    data/imagenes_alt/dc693a6ae970bd0dcd68be0d68430a9e.jpeg,52.757781982421875
-    data/imagenes_alt/9f406249a791c8a666b74ebd0617c391.jpeg,53.97950744628906
-    data/imagenes_alt/54e5a307cb22dc4b426240a897e6d584.jpeg,54.46134948730469
-    data/imagenes_alt/9db772ce1ce36de5e860738865233a22.jpeg,56.36448287963867
-    data/imagenes_alt/7ba008c62b07e9853c85b229fa8a7a36.jpeg,57.79072189331055
-    data/imagenes_alt/38940f4c9c13479dac706d89a17708bd.jpeg,58.11359786987305
-    data/imagenes_alt/f88a7a7987f79968cb84c99e6e5e9971.jpeg,58.468685150146484
-
