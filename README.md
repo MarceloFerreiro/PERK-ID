@@ -2,6 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20284272.svg)](https://doi.org/10.5281/zenodo.20284272)
 ![Python Versions](https://img.shields.io/badge/python-3.11%20%E2%80%93%203.14-blue)
+[![License: BSD](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://github.com/your-org/your-repo/blob/main/LICENSE)
 
 Proyecto de la asignatura Bioinformática y Medicina del Grado en Inteligencia Artificial de la Universidade da Coruña.
 ![vaites, ocurreu un erro ca imaxe](https://github.com/MarceloFerreiro/PERK-ID/blob/main/data/icono.jpeg?raw=true)
