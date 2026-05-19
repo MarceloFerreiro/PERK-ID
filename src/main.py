@@ -20,8 +20,8 @@ from src.utils.config import get_config
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-FEATURES_PATH = Path("data/features.npz")
-BOW_PATH = Path("data/bow.pkl")
+FEATURES_PATH = Path("data/indices/f_sn.npz")
+BOW_PATH = Path("data/indices/bow.pkl")
 CSV_PATH = Path("data/pastillas_energycontrol.csv")
 IMAGES_DIR = Path("data/imagenes_alt")
 MAX_TOPK = 50
@@ -30,7 +30,6 @@ state: dict = {}
 
 
 def _build_metadata_index(df: pd.DataFrame) -> dict:
-    """Build filename → row lookup covering both front and rear image columns."""
     index = {}
     for _, row in df.iterrows():
         for col in ("ruta_imagen", "ruta_imagen_rear"):
@@ -40,6 +39,24 @@ def _build_metadata_index(df: pd.DataFrame) -> dict:
                 if filename and filename not in index:
                     index[filename] = row
     return index
+
+
+def _build_filter_index(paths: list[str], metadata: dict) -> tuple[dict, dict]:
+    """Build color → [row indices] and logo → [row indices] lookups."""
+    from collections import defaultdict
+    color_idx: dict[str, list[int]] = defaultdict(list)
+    logo_idx:  dict[str, list[int]] = defaultdict(list)
+    for i, path in enumerate(paths):
+        row = metadata.get(Path(path).name)
+        if row is None:
+            continue
+        color = row.get("color")
+        logo  = row.get("logo")
+        if pd.notna(color) and color:
+            color_idx[str(color).lower()].append(i)
+        if pd.notna(logo) and logo:
+            logo_idx[str(logo).lower()].append(i)
+    return dict(color_idx), dict(logo_idx)
 
 
 @asynccontextmanager
@@ -61,6 +78,8 @@ async def lifespan(app: FastAPI):
 
     df = pd.read_csv(CSV_PATH, encoding="utf-8-sig")
     state["metadata"] = _build_metadata_index(df)
+    state["df"] = df
+    state["color_idx"], state["logo_idx"] = _build_filter_index(paths, state["metadata"])
 
     log.info(f"Ready — {len(paths)} images indexed")
     yield
@@ -112,6 +131,16 @@ class QueryResponse(BaseModel):
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
 
+@app.get("/filters")
+def get_filters():
+    df: pd.DataFrame = state.get("df")
+    if df is None:
+        return {"colors": [], "logos": []}
+    colors = sorted(df["color"].dropna().unique().tolist())
+    logos  = sorted(df["logo"].dropna().unique().tolist())
+    return {"colors": colors, "logos": logos}
+
+
 @app.get("/health")
 def health():
     ranker: Ranker = state.get("ranker")
@@ -125,6 +154,8 @@ def health():
 async def query_image(
     image: UploadFile = File(...),
     topk: int = Query(default=10, ge=1, le=MAX_TOPK),
+    colors: list[str] = Query(default=[]),
+    logos:  list[str] = Query(default=[]),
 ):
     contents = await image.read()
 
@@ -142,12 +173,28 @@ async def query_image(
         raise HTTPException(status_code=400, detail="Could not decode image")
 
     ranker: Ranker = state["ranker"]
-    indices, distances, img_paths = ranker.rank(img)
 
-    # Slice to requested topk (ranker is initialized with MAX_TOPK)
-    indices = indices[:topk]
-    distances = distances[:topk]
-    img_paths = img_paths[:topk]
+    if colors or logos:
+        # union within each category, intersection across categories
+        valid: set[int] | None = None
+        if colors:
+            valid = set().union(*[set(state["color_idx"].get(c.lower(), [])) for c in colors])
+        if logos:
+            logo_union = set().union(*[set(state["logo_idx"].get(l.lower(), [])) for l in logos])
+            valid = logo_union if valid is None else valid & logo_union
+
+        valid_indices = np.array(sorted(valid), dtype=np.int64)
+        if len(valid_indices) == 0:
+            return QueryResponse(count=0, results=[])
+
+        k = min(topk, len(valid_indices))
+        indices, distances, img_paths = ranker.rank_subset(img, valid_indices)
+        indices, distances, img_paths = indices[:k], distances[:k], img_paths[:k]
+    else:
+        indices, distances, img_paths = ranker.rank(img)
+        indices   = indices[:topk]
+        distances = distances[:topk]
+        img_paths = img_paths[:topk]
 
     meta = state["metadata"]
     results: list[PillResult] = []

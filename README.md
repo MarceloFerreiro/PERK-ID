@@ -195,7 +195,7 @@ El prototipo CLI se migró a un servidor FastAPI y una app Flutter multiplatafor
 
 ```bash
 source venvPerk/bin/activate
-uvicorn api.main:app --host 0.0.0.0 --port 8000
+uvicorn src.main:app --host 0.0.0.0 --port 8000
 ```
 
 El servidor carga el índice en memoria al arrancar y expone:

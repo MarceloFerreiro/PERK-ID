@@ -11,6 +11,7 @@ data/*
 !data/indices/f_sn.npz
 !data/icono.jpeg
 !data/docs/
+
 !data/docs/eval.png
 !data/docs/reconstruccion.png
 !data/docs/transform_grid.png

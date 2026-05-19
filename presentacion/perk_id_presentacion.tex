@@ -614,7 +614,40 @@
 
 %resultados
 \begin{frame}{Resultados}
+  \begin{columns}[c,onlytextwidth]
 
+    \column{0.38\textwidth}
+
+      \begin{block}{Métricas (100 consultas)}
+        \begin{tabular}{lr}
+          Top-1   & \textbf{0.68} \\
+          Top-10  & \textbf{0.89} \\
+          Rank medio & 0.47 \\
+          Fuera top-10 & 11/100 \\
+          Tiempo medio & 208\,ms \\
+        \end{tabular}
+      \end{block}
+
+      \vspace{0.15cm}
+
+      {\scriptsize Consultas generadas aplicando data augmentation: rotación,
+        escala, ruido, blur y jitter simultáneos. }
+
+      \vspace{0.15cm}
+
+      \includegraphics[width=\linewidth,height=0.30\textheight,keepaspectratio]{imagenes/cumulative_rank.png}
+
+      {\scriptsize \centering P(rank $\leq$ k) acumulado}
+
+    \column{0.58\textwidth}
+      \centering
+      \includegraphics[width=\linewidth,height=0.72\textheight,keepaspectratio]{imagenes/eval_grid.png}
+
+      \vspace{0.04cm}
+
+      {\scriptsize Cada fila: consulta transformada (izq.) y los primeros resultados del ranking. \textcolor{green!60!black}{$\bigstar$} marca la imagen original cuando aparece.}
+
+  \end{columns}
 \end{frame}
 
 
@@ -696,9 +729,19 @@
 % 15
 \begin{frame}{Conclusiones}
 
-  -Es recuperación con visión clásica, no es deep learnign (menos por el módulo experimental).
-  -Se han obtenido resultados que \dots
-  -Se ha probado que ...
+  \begin{itemize}
+    \setlength\itemsep{0.35cm}
+    \item Se ha construido un sistema de recuperación de pastillas basado
+    en descriptores clásicos (SIFT + BoW) capaz de identificar la pastilla
+    correcta en el top-10 en el \textbf{89\% de los casos} bajo condiciones
+    mas o menos realistas de captura gracias al DA.
+    \item El sistema sería implementable como app offline (integración nativa
+    con Kotlin/Swift, sin necesidad de server FastAPI). 
+
+    \item El enfoque clásico se
+    considera una ventaja en salud pública, ya que los modelos son interpretables y
+    auditables, sin las limitaciones de explicabilidad del deep learning.
+  \end{itemize}
 
 \end{frame}
 
