@@ -109,12 +109,19 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   String? _error;
   int _topk = 10;
   FlashMode _flashMode = FlashMode.off;
+  List<String> _availableColors = [];
+  List<String> _availableLogos  = [];
+  Set<String>  _selectedColors  = {};
+  Set<String>  _selectedLogos   = {};
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadPrefs().then((_) => _initCamera());
+    _loadPrefs().then((_) {
+      _initCamera();
+      _fetchFilters();
+    });
   }
 
   @override
@@ -140,6 +147,39 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
     _serverCtrl.text =
         prefs.getString('server_url') ?? 'http://192.168.1.137:8000';
+  }
+
+  Future<void> _fetchFilters() async {
+    try {
+      final res = await http
+          .get(Uri.parse('$_baseUrl/filters'))
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        setState(() {
+          _availableColors = List<String>.from(data['colors'] as List);
+          _availableLogos  = List<String>.from(data['logos']  as List);
+        });
+      }
+    } catch (_) {}
+  }
+
+  void _openFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _FilterSheet(
+        availableColors: _availableColors,
+        availableLogos:  _availableLogos,
+        selectedColors:  Set.from(_selectedColors),
+        selectedLogos:   Set.from(_selectedLogos),
+        onApply: (colors, logos) => setState(() {
+          _selectedColors = colors;
+          _selectedLogos  = logos;
+        }),
+      ),
+    );
   }
 
   Future<void> _savePrefs() async {
@@ -217,7 +257,10 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   Future<void> _sendImage(XFile file) async {
     await _savePrefs();
     final bytes = await file.readAsBytes();
-    final uri = Uri.parse('$_baseUrl/query?topk=$_topk');
+    var rawUrl = '$_baseUrl/query?topk=$_topk';
+    for (final c in _selectedColors) rawUrl += '&colors=${Uri.encodeComponent(c)}';
+    for (final l in _selectedLogos)  rawUrl += '&logos=${Uri.encodeComponent(l)}';
+    final uri = Uri.parse(rawUrl);
     final req = http.MultipartRequest('POST', uri)
       ..files.add(http.MultipartFile.fromBytes(
         'image',
@@ -363,15 +406,76 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             ),
           ),
 
-          // ── Top-right: topK selector ────────────────────────────
+          // ── Top-right: topK selector + filter button ───────────
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             right: 12,
-            child: _TopKSelector(
-              value: _topk,
-              onChanged: (v) => setState(() => _topk = v),
+            child: Row(
+              children: [
+                _TopKSelector(value: _topk, onChanged: (v) => setState(() => _topk = v)),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: _openFilterSheet,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: (_selectedColors.isNotEmpty || _selectedLogos.isNotEmpty)
+                          ? Colors.indigo.withValues(alpha: 0.9)
+                          : Colors.black54,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(Icons.filter_list, color: Colors.white, size: 22),
+                        if (_selectedColors.isNotEmpty || _selectedLogos.isNotEmpty)
+                          Positioned(
+                            top: -4, right: -4,
+                            child: Container(
+                              width: 14, height: 14,
+                              decoration: const BoxDecoration(
+                                color: Colors.amber,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${_selectedColors.length + _selectedLogos.length}',
+                                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
+
+          // ── Active filter chips ─────────────────────────────────
+          if (_selectedColors.isNotEmpty || _selectedLogos.isNotEmpty)
+            Positioned(
+              bottom: MediaQuery.of(context).padding.bottom + 24 + 88,
+              left: 8, right: 8,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ..._selectedColors.map((c) => _ActiveFilterChip(
+                      label: c,
+                      color: Colors.indigo.shade700,
+                      onRemove: () => setState(() => _selectedColors.remove(c)),
+                    )),
+                    ..._selectedLogos.map((l) => _ActiveFilterChip(
+                      label: l,
+                      color: Colors.deepPurple.shade700,
+                      onRemove: () => setState(() => _selectedLogos.remove(l)),
+                    )),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -615,7 +719,9 @@ class PillDetailPage extends StatelessWidget {
               _RowData('Diameter', result.diametroMm != null ? '${result.diametroMm} mm' : null),
               _RowData('Divisible', result.divisible != null ? (result.divisible! ? 'Yes' : 'No') : null),
             ]),
-            if (result.substances.isNotEmpty)
+            if (result.substances.isNotEmpty) ...[
+              _SubstanceBar(substances: result.substances, pesoMg: result.pesoMg),
+              const SizedBox(height: 8),
               _Section(
                 title: 'Substances',
                 rows: result.substances
@@ -623,13 +729,406 @@ class PillDetailPage extends StatelessWidget {
                           s.nombre,
                           s.valor != null
                               ? '${s.valor} ${s.unidad ?? ''}'.trim()
-                              : s.unidad,
+                              : '—',
                         ))
                     .toList(),
               ),
+            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Active filter chip (camera overlay) ───────────────────────────────────────
+
+class _ActiveFilterChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onRemove;
+  const _ActiveFilterChip({required this.label, required this.color, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: onRemove,
+            child: const Icon(Icons.close, size: 14, color: Colors.white70),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Filter Sheet ───────────────────────────────────────────────────────────────
+
+Widget _colorDot(String name) {
+  const map = {
+    'verde': Color(0xFF4CAF50),    'azul': Color(0xFF2196F3),
+    'rojo': Color(0xFFF44336),     'amarillo': Color(0xFFFFEB3B),
+    'blanco': Colors.white,        'negro': Color(0xFF212121),
+    'naranja': Color(0xFFFF9800),  'rosa': Color(0xFFE91E63),
+    'morado': Color(0xFF9C27B0),   'lila': Color(0xFFCE93D8),
+    'gris': Color(0xFF9E9E9E),     'marrón': Color(0xFF795548),
+    'turquesa': Color(0xFF00BCD4),
+  };
+  return Container(
+    width: 13, height: 13,
+    decoration: BoxDecoration(
+      color: map[name.toLowerCase()] ?? const Color(0xFF555555),
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white24, width: 0.5),
+    ),
+  );
+}
+
+Widget _sectionHeader(String title, int selected) => Padding(
+  padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+  child: Row(children: [
+    Text(title.toUpperCase(),
+        style: const TextStyle(
+            color: Colors.white54, fontSize: 11,
+            letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+    if (selected > 0) ...[
+      const SizedBox(width: 8),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+            color: Colors.indigo, borderRadius: BorderRadius.circular(10)),
+        child: Text('$selected',
+            style: const TextStyle(color: Colors.white, fontSize: 10)),
+      ),
+    ],
+  ]),
+);
+
+class _FilterItem {
+  final String label;
+  final bool isHeader;
+  final bool isColor;
+  const _FilterItem._(this.label, this.isHeader, this.isColor);
+  factory _FilterItem.header(String l) => _FilterItem._(l, true,  false);
+  factory _FilterItem.color(String l)  => _FilterItem._(l, false, true);
+  factory _FilterItem.logo(String l)   => _FilterItem._(l, false, false);
+}
+
+class _FilterSheet extends StatefulWidget {
+  final List<String> availableColors;
+  final List<String> availableLogos;
+  final Set<String> selectedColors;
+  final Set<String> selectedLogos;
+  final void Function(Set<String> colors, Set<String> logos) onApply;
+
+  const _FilterSheet({
+    required this.availableColors,
+    required this.availableLogos,
+    required this.selectedColors,
+    required this.selectedLogos,
+    required this.onApply,
+  });
+
+  @override
+  State<_FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends State<_FilterSheet> {
+  late final TextEditingController _search;
+  late Set<String> _selColors;
+  late Set<String> _selLogos;
+
+  @override
+  void initState() {
+    super.initState();
+    _search = TextEditingController();
+    _selColors = Set.from(widget.selectedColors);
+    _selLogos  = Set.from(widget.selectedLogos);
+  }
+
+  @override
+  void dispose() { _search.dispose(); super.dispose(); }
+
+  List<String> _filter(List<String> list) {
+    final q = _search.text.toLowerCase();
+    return q.isEmpty ? list : list.where((s) => s.toLowerCase().contains(q)).toList();
+  }
+
+  // Flatten into a typed item list so ListView.builder renders lazily
+  List<_FilterItem> _buildItems(List<String> colors, List<String> logos) {
+    final items = <_FilterItem>[];
+    if (colors.isNotEmpty) {
+      items.add(_FilterItem.header('Colores'));
+      items.addAll(colors.map((c) => _FilterItem.color(c)));
+    }
+    if (logos.isNotEmpty) {
+      items.add(_FilterItem.header('Logos'));
+      items.addAll(logos.map((l) => _FilterItem.logo(l)));
+    }
+    return items;
+  }
+
+  Widget _buildList(ScrollController ctrl, List<String> colors, List<String> logos) {
+    if (colors.isEmpty && logos.isEmpty) {
+      return const Center(
+        child: Text('Sin resultados', style: TextStyle(color: Colors.white38)),
+      );
+    }
+    final items = _buildItems(colors, logos);
+    return ListView.builder(
+      controller: ctrl,
+      itemCount: items.length + 1, // +1 for bottom padding
+      itemBuilder: (_, i) {
+        if (i == items.length) return const SizedBox(height: 80);
+        final item = items[i];
+        if (item.isHeader) {
+          return _sectionHeader(
+            item.label,
+            item.label == 'Colores' ? _selColors.length : _selLogos.length,
+          );
+        }
+        if (item.isColor) {
+          final c = item.label;
+          return CheckboxListTile(
+            dense: true,
+            value: _selColors.contains(c),
+            onChanged: (v) => setState(() => v! ? _selColors.add(c) : _selColors.remove(c)),
+            title: Row(children: [
+              _colorDot(c),
+              const SizedBox(width: 10),
+              Text(c, style: const TextStyle(color: Colors.white)),
+            ]),
+            activeColor: Colors.indigo,
+            checkColor: Colors.white,
+            side: const BorderSide(color: Colors.white24),
+          );
+        }
+        final l = item.label;
+        return CheckboxListTile(
+          dense: true,
+          value: _selLogos.contains(l),
+          onChanged: (v) => setState(() => v! ? _selLogos.add(l) : _selLogos.remove(l)),
+          title: Text(l, style: const TextStyle(color: Colors.white)),
+          activeColor: Colors.indigo,
+          checkColor: Colors.white,
+          side: const BorderSide(color: Colors.white24),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredColors = _filter(widget.availableColors);
+    final filteredLogos  = _filter(widget.availableLogos);
+    final totalSelected  = _selColors.length + _selLogos.length;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.72,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      builder: (_, ctrl) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF1E1E2E),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(children: [
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 10),
+            width: 40, height: 4,
+            decoration: BoxDecoration(
+                color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: TextField(
+              controller: _search,
+              onChanged: (_) => setState(() {}),
+              autofocus: true,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Buscar color o logo…',
+                hintStyle: const TextStyle(color: Colors.white38),
+                prefixIcon: const Icon(Icons.search, color: Colors.white38),
+                filled: true,
+                fillColor: Colors.white10,
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
+                suffixIcon: _search.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.white38),
+                        onPressed: () { _search.clear(); setState(() {}); })
+                    : null,
+              ),
+            ),
+          ),
+          const Divider(height: 1, color: Colors.white12),
+          Expanded(
+            child: _buildList(ctrl, filteredColors, filteredLogos),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Row(children: [
+                if (totalSelected > 0)
+                  TextButton(
+                    onPressed: () => setState(() {
+                      _selColors.clear(); _selLogos.clear();
+                    }),
+                    child: const Text('Limpiar',
+                        style: TextStyle(color: Colors.white54)),
+                  ),
+                const Spacer(),
+                FilledButton(
+                  onPressed: () {
+                    widget.onApply(_selColors, _selLogos);
+                    Navigator.pop(context);
+                  },
+                  child: Text(totalSelected > 0
+                      ? 'Aplicar ($totalSelected)'
+                      : 'Aplicar'),
+                ),
+              ]),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+// ── Substance composition bar ──────────────────────────────────────────────────
+
+class _SubstanceBar extends StatelessWidget {
+  final List<Substance> substances;
+  final double? pesoMg;
+  const _SubstanceBar({required this.substances, this.pesoMg});
+
+  static const _palette = [
+    Color(0xFF4C9BE8),
+    Color(0xFFE8994C),
+    Color(0xFF4CE884),
+    Color(0xFFE84C4C),
+    Color(0xFFB44CE8),
+    Color(0xFFE8E84C),
+    Color(0xFF4CE8E8),
+    Color(0xFFE84CB4),
+  ];
+
+  static const _grey     = Color(0xFF555566);
+  static const _greyText = TextStyle(color: Colors.white38, fontSize: 12);
+  static const _labelStyle = TextStyle(color: Colors.white70, fontSize: 13, letterSpacing: 1.2);
+
+  Widget _dot(Color color) => Container(
+        width: 10, height: 10,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      );
+
+  Widget _legendRow(Color color, String label) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _dot(color),
+          const SizedBox(width: 5),
+          Text(label, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+        ],
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final withValue    = substances.where((s) => s.valor != null && s.valor! > 0).toList();
+    final withoutValue = substances.where((s) => s.valor == null || s.valor! <= 0).toList();
+
+    if (substances.isEmpty) return const SizedBox.shrink();
+
+    // ── All unknown: full grey bar ────────────────────────────────────────────
+    if (withValue.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Composición', style: _labelStyle),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(height: 10, color: _grey),
+                const Text('?',
+                    style: TextStyle(color: Colors.white54, fontSize: 8,
+                        fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 14, runSpacing: 6,
+            children: withoutValue
+                .map((s) => _legendRow(_grey, '${s.nombre}  —'))
+                .toList(),
+          ),
+          const SizedBox(height: 20),
+        ],
+      );
+    }
+
+    // ── Has values: use pesoMg as total if available ──────────────────────────
+    final knownTotal = withValue.fold(0.0, (sum, s) => sum + s.valor!);
+    final total      = (pesoMg != null && pesoMg! > knownTotal) ? pesoMg! : knownTotal;
+    final filler     = total - knownTotal;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Composición', style: _labelStyle),
+        const SizedBox(height: 10),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: Row(
+            children: [
+              ...withValue.asMap().entries.map((e) {
+                final flex = ((e.value.valor! / total) * 1000).round().clamp(1, 1000);
+                return Expanded(
+                  flex: flex,
+                  child: Container(height: 10, color: _palette[e.key % _palette.length]),
+                );
+              }),
+              if (filler > 0)
+                Expanded(
+                  flex: ((filler / total) * 1000).round().clamp(1, 1000),
+                  child: Container(height: 10, color: _grey),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 14, runSpacing: 6,
+          children: [
+            ...withValue.asMap().entries.map((e) {
+              final pct = (e.value.valor! / total * 100).toStringAsFixed(1);
+              return _legendRow(_palette[e.key % _palette.length],
+                  '${e.value.nombre}  $pct%');
+            }),
+            if (filler > 0)
+              _legendRow(_grey,
+                  'Excipientes  ${(filler / total * 100).toStringAsFixed(1)}%'),
+            ...withoutValue.map((s) => _legendRow(_grey, '${s.nombre}  —')),
+          ],
+        ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 }

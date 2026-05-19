@@ -25,17 +25,31 @@ class Ranker:
         print(bow_extractor)
         self.bow_extractor = bow_extractor
 
-    def rank(self, image: np.array) -> list[tuple[str, float]]:
+    def _query_vector(self, image: np.array) -> np.ndarray:
         q = features(image).astype(np.float32)
-        
         if self.bow_extractor is not None:
             sift_desc = extract_sift_descriptors(image)
             bow_histogram = self.bow_extractor.extract_histogram(sift_desc)
             q = np.concatenate([q, bow_histogram]).astype(np.float32)
-        
+        return q
+
+    def rank(self, image: np.array) -> tuple:
+        q = self._query_vector(image)
         distances, indices = self.nn.kneighbors(q.reshape(1, -1), return_distance=True)
         paths = [self.paths[i] for i in indices[0]]
         return indices[0], distances[0], paths
+
+    def rank_subset(self, image: np.array, valid_indices: np.ndarray) -> tuple:
+        """kNN restricted to a subset of the index (for pre-filtering by color/logo)."""
+        q = self._query_vector(image)
+        k = min(len(valid_indices), self.nn.n_neighbors)
+        sub_nn = NearestNeighbors(
+            n_neighbors=k, metric=self.nn.metric
+        ).fit(self.features_matrix[valid_indices])
+        distances, sub_idx = sub_nn.kneighbors(q.reshape(1, -1), return_distance=True)
+        original_indices = valid_indices[sub_idx[0]]
+        paths = [self.paths[i] for i in original_indices]
+        return original_indices, distances[0], paths
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Ranking")

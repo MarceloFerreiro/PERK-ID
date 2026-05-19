@@ -63,6 +63,7 @@ def main() -> int:
     num_rank_grid = 10
     rank_images = []
     dists = []
+    grid_true_ranks = []
 
     skipped = 0
 
@@ -77,16 +78,18 @@ def main() -> int:
 
         indices, distances, ranked_paths = ranker.rank(img_tranformed)
 
+        true_pos = int(np.where(indices == idx)[0][0]) if idx in indices else -1
         if num_pills_grid > len(pills_images):
             pills_images.append(img_tranformed)
             rank_images.append([read_image(p) for p in ranked_paths[:num_rank_grid]])
             dists.append(distances[:num_rank_grid])
+            grid_true_ranks.append(true_pos)
         
         acc1.append(1 if indices[0] == idx else 0)
         acck.append(1 if idx in indices else 0)
         dist.append(distances[0])
         secs.append(time() - inicio)
-        rank.append(np.where(indices == idx)[0][0] if idx in indices else -1)
+        rank.append(true_pos)
 
     if not acc1:
         print("[ERROR] No se pudo evaluar ninguna imagen (rutas invalidas)")
@@ -101,8 +104,10 @@ def main() -> int:
     print(f"Duración media inferencia: {np.mean(secs):.4f}s")
     print(f"Ranking medio: {np.mean(rank):.4f}")
     print(f"La pastilla quedo fuera del top-{args.topk} en: {sum([1 for r in rank if r == -1])}/{eval_size} casos")
-    cummulative_rank(rank)
-    grid_rank(pills_images, rank_images, dists)
+    cummulative_rank(rank, save_path=Path("tmp/cumulative_rank.png"))
+    grid_rank(pills_images, rank_images, dists,
+              true_rank_pos=grid_true_ranks,
+              save_path=Path("tmp/eval_grid.png"))
 
 
     return 0
