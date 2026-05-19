@@ -815,6 +815,16 @@ Widget _sectionHeader(String title, int selected) => Padding(
   ]),
 );
 
+class _FilterItem {
+  final String label;
+  final bool isHeader;
+  final bool isColor;
+  const _FilterItem._(this.label, this.isHeader, this.isColor);
+  factory _FilterItem.header(String l) => _FilterItem._(l, true,  false);
+  factory _FilterItem.color(String l)  => _FilterItem._(l, false, true);
+  factory _FilterItem.logo(String l)   => _FilterItem._(l, false, false);
+}
+
 class _FilterSheet extends StatefulWidget {
   final List<String> availableColors;
   final List<String> availableLogos;
@@ -853,6 +863,69 @@ class _FilterSheetState extends State<_FilterSheet> {
   List<String> _filter(List<String> list) {
     final q = _search.text.toLowerCase();
     return q.isEmpty ? list : list.where((s) => s.toLowerCase().contains(q)).toList();
+  }
+
+  // Flatten into a typed item list so ListView.builder renders lazily
+  List<_FilterItem> _buildItems(List<String> colors, List<String> logos) {
+    final items = <_FilterItem>[];
+    if (colors.isNotEmpty) {
+      items.add(_FilterItem.header('Colores'));
+      items.addAll(colors.map((c) => _FilterItem.color(c)));
+    }
+    if (logos.isNotEmpty) {
+      items.add(_FilterItem.header('Logos'));
+      items.addAll(logos.map((l) => _FilterItem.logo(l)));
+    }
+    return items;
+  }
+
+  Widget _buildList(ScrollController ctrl, List<String> colors, List<String> logos) {
+    if (colors.isEmpty && logos.isEmpty) {
+      return const Center(
+        child: Text('Sin resultados', style: TextStyle(color: Colors.white38)),
+      );
+    }
+    final items = _buildItems(colors, logos);
+    return ListView.builder(
+      controller: ctrl,
+      itemCount: items.length + 1, // +1 for bottom padding
+      itemBuilder: (_, i) {
+        if (i == items.length) return const SizedBox(height: 80);
+        final item = items[i];
+        if (item.isHeader) {
+          return _sectionHeader(
+            item.label,
+            item.label == 'Colores' ? _selColors.length : _selLogos.length,
+          );
+        }
+        if (item.isColor) {
+          final c = item.label;
+          return CheckboxListTile(
+            dense: true,
+            value: _selColors.contains(c),
+            onChanged: (v) => setState(() => v! ? _selColors.add(c) : _selColors.remove(c)),
+            title: Row(children: [
+              _colorDot(c),
+              const SizedBox(width: 10),
+              Text(c, style: const TextStyle(color: Colors.white)),
+            ]),
+            activeColor: Colors.indigo,
+            checkColor: Colors.white,
+            side: const BorderSide(color: Colors.white24),
+          );
+        }
+        final l = item.label;
+        return CheckboxListTile(
+          dense: true,
+          value: _selLogos.contains(l),
+          onChanged: (v) => setState(() => v! ? _selLogos.add(l) : _selLogos.remove(l)),
+          title: Text(l, style: const TextStyle(color: Colors.white)),
+          activeColor: Colors.indigo,
+          checkColor: Colors.white,
+          side: const BorderSide(color: Colors.white24),
+        );
+      },
+    );
   }
 
   @override
@@ -903,47 +976,7 @@ class _FilterSheetState extends State<_FilterSheet> {
           ),
           const Divider(height: 1, color: Colors.white12),
           Expanded(
-            child: ListView(controller: ctrl, children: [
-              if (filteredColors.isNotEmpty) ...[
-                _sectionHeader('Colores', _selColors.length),
-                ...filteredColors.map((c) => CheckboxListTile(
-                  dense: true,
-                  value: _selColors.contains(c),
-                  onChanged: (v) => setState(
-                      () => v! ? _selColors.add(c) : _selColors.remove(c)),
-                  title: Row(children: [
-                    _colorDot(c),
-                    const SizedBox(width: 10),
-                    Text(c, style: const TextStyle(color: Colors.white)),
-                  ]),
-                  activeColor: Colors.indigo,
-                  checkColor: Colors.white,
-                  side: const BorderSide(color: Colors.white24),
-                )),
-              ],
-              if (filteredLogos.isNotEmpty) ...[
-                _sectionHeader('Logos', _selLogos.length),
-                ...filteredLogos.map((l) => CheckboxListTile(
-                  dense: true,
-                  value: _selLogos.contains(l),
-                  onChanged: (v) => setState(
-                      () => v! ? _selLogos.add(l) : _selLogos.remove(l)),
-                  title: Text(l, style: const TextStyle(color: Colors.white)),
-                  activeColor: Colors.indigo,
-                  checkColor: Colors.white,
-                  side: const BorderSide(color: Colors.white24),
-                )),
-              ],
-              if (filteredColors.isEmpty && filteredLogos.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(
-                    child: Text('Sin resultados',
-                        style: TextStyle(color: Colors.white38)),
-                  ),
-                ),
-              const SizedBox(height: 80),
-            ]),
+            child: _buildList(ctrl, filteredColors, filteredLogos),
           ),
           SafeArea(
             child: Padding(
