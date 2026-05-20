@@ -5,7 +5,10 @@
 [![License: BSD](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://github.com/your-org/your-repo/blob/main/LICENSE)
 
 Proyecto de la asignatura Bioinformática y Medicina del Grado en Inteligencia Artificial de la Universidade da Coruña.
+---
 ![vaites, ocurreu un erro ca imaxe](https://github.com/MarceloFerreiro/PERK-ID/blob/main/data/icono.jpeg?raw=true)
+
+![erro co gif](https://github.com/MarceloFerreiro/PERK-ID/blob/main/data/docs/entrenamiento.gif?raw=true)
 
 <details> 
 <summary> TODO </summary>

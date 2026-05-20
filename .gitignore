@@ -16,6 +16,7 @@ data/*
 !data/docs/eval.png
 !data/docs/reconstruccion.png
 !data/docs/transform_grid.png
+!data/docs/entrenamiento.gif
 !presentacion/imagenes/*
 __pycache__/
 
