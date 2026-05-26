@@ -6,7 +6,6 @@
 
 Proyecto de la asignatura Bioinformática y Medicina del Grado en Inteligencia Artificial de la Universidade da Coruña.
 ---
-![vaites, ocurreu un erro ca imaxe](https://github.com/MarceloFerreiro/PERK-ID/blob/main/data/icono.jpeg?raw=true)
 
 ![erro co gif](https://github.com/MarceloFerreiro/PERK-ID/blob/main/data/docs/entrenamiento.gif?raw=true)
 
@@ -274,3 +273,8 @@ Cambios en `api/main.py` → reiniciar el servidor (Ctrl+C y volver a lanzar).
 Cambios en `pillsearch/lib/` → Flutter recarga automáticamente con hot reload.
 
 ---
+
+> 2026
+>
+> 
+![vaites, ocurreu un erro ca imaxe](https://github.com/MarceloFerreiro/PERK-ID/blob/main/data/icono.jpeg?raw=true)
